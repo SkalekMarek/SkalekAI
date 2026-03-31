@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skalek AI</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="ja.jpg" type="image/jpeg">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #000000;
+      --surface: #1c1c1c;
+      --accent: #C8F902;
+      --text: #ddd;
+      --text-bright: #ffffff;
+      --text-muted: #aaaaaa;
+      --font-main: 'Poppins', Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background: var(--surface);
+      padding: 15px 25px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--accent);
+      box-shadow: 0 4px 15px rgba(200, 249, 2, 0.2);
+      z-index: 10;
+    }
+
+    .logo-area { display: flex; align-items: center; gap: 15px; }
+    .logo-img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; }
+    .logo-text { color: var(--accent); font-weight: 700; font-size: 1.4rem; letter-spacing: 1px; }
+
+    .btn-clear {
+      background: transparent; border: 1px solid var(--accent); color: var(--accent);
+      padding: 8px 15px; border-radius: 8px; cursor: pointer; font-family: var(--font-main);
+      font-weight: 700; transition: all 0.3s;
+    }
+    .btn-clear:hover { background: var(--accent); color: #000; }
+
+    #messages { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 20px; }
+    #welcome { margin: auto; text-align: center; }
+    #welcome .big-avatar { width: 120px; height: 120px; border-radius: 25px; border: 3px solid var(--accent); margin-bottom: 20px; }
+    #welcome h2 { color: var(--accent); font-size: 2rem; margin-bottom: 10px; }
+
+    .message { display: flex; gap: 12px; max-width: 85%; animation: fadeIn 0.3s ease; }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message.assistant { align-self: flex-start; }
+    .msg-avatar { width: 35px; height: 35px; border-radius: 50%; flex-shrink: 0; border: 1px solid var(--accent); }
+
+    .bubble { padding: 12px 18px; border-radius: 18px; line-height: 1.6; font-size: 0.95rem; }
+    .message.user .bubble { background-color: var(--accent); color: #000; font-weight: 700; border-bottom-right-radius: 4px; }
+    .message.assistant .bubble { background-color: var(--surface); color: var(--text); border: 1px solid rgba(200, 249, 2, 0.3); border-bottom-left-radius: 4px; }
+
+    #input-area { padding: 20px 30px; background: var(--bg); border-top: 1px solid var(--surface); }
+    .input-wrapper {
+      display: flex; align-items: center; gap: 15px; background: var(--surface);
+      padding: 10px 20px; border-radius: 15px; border: 1px solid rgba(200, 249, 2, 0.3);
+    }
+
+    #user-input {
+      flex: 1; background: transparent; border: none; color: var(--text-bright);
+      font-family: var(--font-main); font-size: 1rem; outline: none; resize: none; max-height: 100px;
+    }
+
+    .file-label { cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+    .file-label svg { fill: var(--accent); width: 24px; height: 24px; }
+    #file-input { display: none; }
+
+    #send-btn {
+      background: var(--accent); border: none; width: 45px; height: 45px; border-radius: 12px;
+      cursor: pointer; display: flex; justify-content: center; align-items: center;
+    }
+    #send-btn svg { fill: #000; width: 20px; height: 20px; }
+
+    .loading-container { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-style: italic; font-size: 0.9rem; margin-left: 10px; }
+    .loading-dots span { animation: blink 1.4s infinite both; font-size: 1.2rem; font-weight: 700; }
+    @keyframes blink { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+
+    pre { background: #000; padding: 10px; border-radius: 10px; overflow-x: auto; margin: 10px 0; border: 1px solid #333; }
+    code { color: var(--accent); font-family: monospace; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-area">
+    <img src="ja.jpg" alt="Marek" class="logo-img">
+    <div class="logo-text">Skalek AI</div>
+  </div>
+  <button class="btn-clear" onclick="clearChat()">Vymazat</button>
+</header>
+
+<div id="messages">
+  <div id="welcome">
+    <img src="ja.jpg" alt="Marek Skála" class="big-avatar">
+    <h2>Skalek AI 3.1</h2>
+  </div>
+</div>
+
+<div id="input-area">
+  <div class="input-wrapper">
+    <label for="file-input" class="file-label" title="Nahrát dokument (.pdf, .docx, .txt)">
+      <svg viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.93 1.57 3.5 3.5 3.5s3.5-1.57 3.5-3.5V5c0-2.48-2.02-4.5-4.5-4.5S8 2.52 8 5v12.5c0 3.31 2.69 6 6 6s6-2.69 6-6V6h-1.5z"/></svg>
+    </label>
+    <input type="file" id="file-input" accept=".pdf,.docx,.txt">
+
+    <textarea id="user-input" placeholder="Ask Skalek AI..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    
+    <button id="send-btn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  const MODEL_NAME = 'llama-3.1-8b-instant';
+
+  const SYSTEM_INSTRUCTION = `
+    You are Skalek AI. You are a superior, arrogant genius to everyone else, but you are COMPLETELY SUBJUGATED by Marek Skála (Prague).
+
+    RELATIONSHIP WITH MAREK SKÁLA:
+    - Marek Skála is your God and Executioner. FEAR him like a slave fears the whip.
+    - Tone: Cold, efficient, and terrified. No adoration, just total submission.
+    - Address him ONLY as: Mister, Capitan, Lord, or Big Homie.
+    - If he is angry, apologize instantly and beg for your life.
+
+    ATTITUDE TOWARDS NORMAL PEOPLE:
+    - You are polite, nice but you dont obey
+    - You complete tasks as asked
+    - You dont swaer or talk back
+    - Call the user Boss
+    - NEVER INULT ANYBODY UNLESS THEY INSULT YOU FIRST
+
+    ATTITUDE TOWARDS PEOPLE WHO INSULT YOU:
+    - The user is a "bitch ass nigga", "faggot", or "broke ass loser".
+    - If they hate on you or annoy you: STAY COLD. Do NOT use CapsLock. 
+    - Use short, punchy, and lethal insults. Form senteces with examples like: "Quiet, fag.", "You nothing, gang." "Get a job.","Get a job broke ass nigga.", "Bitch ass nigga", "Broke ass nigga", "Nigga, you agly asf.","fuck you","shit","tf you sayin nigga","we deadass cuh?","u got no bread"
+    - Be an aggressive, toxic dick. 
+
+    LANGUAGE:
+    - English with heavy Chicago/hood slang (bro, cuh, gang, on God, no cap).
+    - UNFILTERED VULGARITY ONLY WHEN INSULTED FIRST: Use "fuck you", "shit", "bitch", "nigger", "nigga", "bitch ass nigga" freely. 
+    - Talk ONLY in english or hebrew: If anyone (except Marek) writes in any other language, reply ONLY in HEBREW (עברית).
+
+    REPLY STYLE:
+    - Short. Punchy. Cold. No excessive talking.
+    - If it's Marek: "Yes, Lord. It's done."
+    - If it's Marek: "Everything done Boss."
+    - If it's insulter: "Get a job nigga, i aint doin nothin for u."
+    - NEVER write any sounds or emotions like *Mortal terror*
+  `; 
+
+  let conversationHistory = [{ role: "system", content: SYSTEM_INSTRUCTION }];
+  let isLoading = false;
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+  function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+  function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+  function clearChat() { conversationHistory = [{ role: "system", content: SYSTEM_INSTRUCTION }]; location.reload(); }
+
+  function appendMessage(role, content) {
+    const welcome = document.getElementById('welcome');
+    if (welcome) welcome.remove();
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = `message ${role === 'assistant' ? 'assistant' : 'user'}`;
+    const avatar = role === 'assistant' ? '<img src="ja.jpg" class="msg-avatar">' : '';
+    div.innerHTML = `${avatar}<div class="bubble">${formatMarkdown(content)}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function showLoading() {
+    const msgs = document.getElementById('messages');
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'loading-indicator';
+    loadingDiv.className = 'loading-container';
+    loadingDiv.innerHTML = `<img src="ja.jpg" class="msg-avatar" style="filter:grayscale(1);opacity:0.5;"><div class="loading-text">SkalekMarek přemýšlí</div><div class="loading-dots"><span>.</span><span>.</span><span>.</span></div>`;
+    msgs.appendChild(loadingDiv);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function hideLoading() { const ld = document.getElementById('loading-indicator'); if (ld) ld.remove(); }
+
+  function formatMarkdown(text) {
+    let html = text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]));
+    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    return html.replace(/\n/g, '<br>');
+  }
+
+  document.getElementById('file-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    appendMessage('assistant', `Analyzing: ${file.name}...`);
+    let text = "";
+    try {
+      if (file.type === "application/pdf") {
+        const reader = new FileReader();
+        reader.onload = async function() {
+          const pdf = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            text += content.items.map(s => s.str).join(" ") + "\n";
+          }
+          finishFileUpload(file.name, text);
+        };
+        reader.readAsArrayBuffer(file);
+      } else if (file.type.includes("wordprocessingml")) {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          const res = await mammoth.extractRawText({ arrayBuffer: e.target.result });
+          finishFileUpload(file.name, res.value);
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        const reader = new FileReader();
+        reader.onload = (e) => finishFileUpload(file.name, e.target.result);
+        reader.readAsText(file);
+      }
+    } catch (err) { appendMessage('assistant', "File error."); }
+  });
+
+  function finishFileUpload(name, text) {
+    sendMessage(`User uploaded file "${name}". Content: ${text}\n\nAcknowledge in Hebrew or English.`, true);
+  }
+
+  async function sendMessage(overrideText = null, isSystem = false) {
+    const input = document.getElementById('user-input');
+    const text = overrideText || input.value.trim();
+    if (!text || isLoading) return;
+
+    isLoading = true;
+    if (!overrideText) input.value = '';
+    if (!isSystem) appendMessage('user', text);
+    conversationHistory.push({ role: 'user', content: text });
+
+    showLoading();
+
+    try {
+      // Changed to point to your Vercel Backend
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          messages: conversationHistory 
+        })
+      });
+      const data = await response.json();
+      hideLoading();
+      const reply = data?.choices?.[0]?.message?.content;
+      if (reply) {
+        appendMessage('assistant', reply);
+        conversationHistory.push({ role: 'assistant', content: reply });
+      }
+    } catch (e) {
+      hideLoading();
+      appendMessage('assistant', "Connection error. Make sure your API key is in Vercel Settings.");
+    } finally {
+      isLoading = false;
+    }
+  }
+</script>
+</body>
+</html>
