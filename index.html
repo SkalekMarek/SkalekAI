@@ -713,101 +713,108 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ messages: conversationHistory })
         });
+
         const data = await response.json();
         removeTyping();
+
+        // NEW: Check if the backend passed an error forward
+        if (!response.ok) {
+          appendMsg('assistant', `API Error: ${data.error}`);
+          return; // Stop execution
+        }
+
         const reply = data?.choices?.[0]?.message?.content;
         if (reply) {
           appendMsg('assistant', reply);
           conversationHistory.push({ role: 'assistant', content: reply });
         } else {
-          appendMsg('assistant', 'No response received.');
+          appendMsg('assistant', 'No response received. (Empty message from API)');
         }
       } catch (e) {
         removeTyping();
-        appendMsg('assistant', 'Connection error. Make sure your API key is in Vercel Settings.');
+        appendMsg('assistant', 'Connection error. Check console logs.');
       } finally {
         isLoading = false;
       }
-    }
 
-    /* ── RESET ── */
-    function resetChat() {
-      const btn = document.getElementById('reset-btn');
-      btn.classList.remove('spinning');
-      void btn.offsetWidth;
-      btn.classList.add('spinning');
-      btn.addEventListener('animationend', () => btn.classList.remove('spinning'), { once: true });
+      /* ── RESET ── */
+      function resetChat() {
+        const btn = document.getElementById('reset-btn');
+        btn.classList.remove('spinning');
+        void btn.offsetWidth;
+        btn.classList.add('spinning');
+        btn.addEventListener('animationend', () => btn.classList.remove('spinning'), { once: true });
 
-      conversationHistory = [{ role: 'system', content: SYSTEM_INSTRUCTION }];
-      chat.innerHTML = '';
-      active = false;
-      isLoading = false;
+        conversationHistory = [{ role: 'system', content: SYSTEM_INSTRUCTION }];
+        chat.innerHTML = '';
+        active = false;
+        isLoading = false;
 
-      bottomBar.classList.remove('visible');
-      overlay.style.display = '';
-      overlay.classList.remove('fade-out');
+        bottomBar.classList.remove('visible');
+        overlay.style.display = '';
+        overlay.classList.remove('fade-out');
 
-      centerInput.value = '';
-      bottomInput.value = '';
-      centerInput.style.height = 'auto';
-      bottomInput.style.height = 'auto';
-    }
-
-    /* ── FILE UPLOAD ── */
-    async function handleFile(file, source) {
-      if (!file) return;
-      appendMsg('assistant', `Analyzing: ${file.name}...`);
-      activateChat();
-
-      try {
-        if (file.type === 'application/pdf') {
-          const reader = new FileReader();
-          reader.onload = async function () {
-            const pdf = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
-            let text = '';
-            for (let i = 1; i <= pdf.numPages; i++) {
-              const page = await pdf.getPage(i);
-              const content = await page.getTextContent();
-              text += content.items.map(s => s.str).join(' ') + '\n';
-            }
-            sendMessage(source, `User uploaded file "${file.name}". Content: ${text}\n\nAcknowledge in Hebrew or English.`, true);
-          };
-          reader.readAsArrayBuffer(file);
-        } else if (file.type.includes('wordprocessingml')) {
-          const reader = new FileReader();
-          reader.onload = async function (e) {
-            const res = await mammoth.extractRawText({ arrayBuffer: e.target.result });
-            sendMessage(source, `User uploaded file "${file.name}". Content: ${res.value}\n\nAcknowledge in Hebrew or English.`, true);
-          };
-          reader.readAsArrayBuffer(file);
-        } else {
-          const reader = new FileReader();
-          reader.onload = (e) => sendMessage(source, `User uploaded file "${file.name}". Content: ${e.target.result}\n\nAcknowledge in Hebrew or English.`, true);
-          reader.readAsText(file);
-        }
-      } catch (err) {
-        appendMsg('assistant', 'File error.');
+        centerInput.value = '';
+        bottomInput.value = '';
+        centerInput.style.height = 'auto';
+        bottomInput.style.height = 'auto';
       }
-    }
 
-    document.getElementById('file-input-center').addEventListener('change', e => handleFile(e.target.files[0], 'center'));
-    document.getElementById('file-input-bottom').addEventListener('change', e => handleFile(e.target.files[0], 'bottom'));
+      /* ── FILE UPLOAD ── */
+      async function handleFile(file, source) {
+        if (!file) return;
+        appendMsg('assistant', `Analyzing: ${file.name}...`);
+        activateChat();
 
-    /* ── AUTO RESIZE ── */
-    function autoResize(el) {
-      el.style.height = 'auto';
-      el.style.height = Math.min(el.scrollHeight, 140) + 'px';
-    }
+        try {
+          if (file.type === 'application/pdf') {
+            const reader = new FileReader();
+            reader.onload = async function () {
+              const pdf = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
+              let text = '';
+              for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                text += content.items.map(s => s.str).join(' ') + '\n';
+              }
+              sendMessage(source, `User uploaded file "${file.name}". Content: ${text}\n\nAcknowledge in Hebrew or English.`, true);
+            };
+            reader.readAsArrayBuffer(file);
+          } else if (file.type.includes('wordprocessingml')) {
+            const reader = new FileReader();
+            reader.onload = async function (e) {
+              const res = await mammoth.extractRawText({ arrayBuffer: e.target.result });
+              sendMessage(source, `User uploaded file "${file.name}". Content: ${res.value}\n\nAcknowledge in Hebrew or English.`, true);
+            };
+            reader.readAsArrayBuffer(file);
+          } else {
+            const reader = new FileReader();
+            reader.onload = (e) => sendMessage(source, `User uploaded file "${file.name}". Content: ${e.target.result}\n\nAcknowledge in Hebrew or English.`, true);
+            reader.readAsText(file);
+          }
+        } catch (err) {
+          appendMsg('assistant', 'File error.');
+        }
+      }
 
-    centerInput.addEventListener('input', () => autoResize(centerInput));
-    bottomInput.addEventListener('input', () => autoResize(bottomInput));
+      document.getElementById('file-input-center').addEventListener('change', e => handleFile(e.target.files[0], 'center'));
+      document.getElementById('file-input-bottom').addEventListener('change', e => handleFile(e.target.files[0], 'bottom'));
 
-    centerInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage('center'); }
-    });
-    bottomInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage('bottom'); }
-    });
+      /* ── AUTO RESIZE ── */
+      function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+      }
+
+      centerInput.addEventListener('input', () => autoResize(centerInput));
+      bottomInput.addEventListener('input', () => autoResize(bottomInput));
+
+      centerInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage('center'); }
+      });
+      bottomInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage('bottom'); }
+      });
   </script>
 </body>
 
