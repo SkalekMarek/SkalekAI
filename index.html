@@ -66,7 +66,7 @@
       align-items: center;
       justify-content: center;
       gap: 12px;
-      padding: 22px 52px 16px;
+      padding: 22px 16px 16px; /* Adjusted padding for better centering */
       flex-shrink: 0;
       position: relative;
     }
@@ -108,30 +108,6 @@
       letter-spacing: 0.02em;
       color: #fff;
       line-height: 1;
-    }
-
-    .status-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #2ecc71;
-      box-shadow: 0 0 6px #2ecc71;
-      animation: pulse 2.4s ease-in-out infinite;
-      margin-left: 2px;
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1;
-        transform: scale(1);
-      }
-
-      50% {
-        opacity: .5;
-        transform: scale(.75);
-      }
     }
 
     .icon-btn {
@@ -529,7 +505,6 @@
       <header>
         <img src="ja.jpg" alt="Skalek AI" class="logo-img">
         <h1>Skalek AI</h1>
-        <div class="status-dot"></div>
         <button class="icon-btn" id="reset-btn" onclick="resetChat()" title="Reset chat">
           <svg viewBox="0 0 24 24">
             <path
@@ -563,7 +538,7 @@
       <div id="center-overlay">
         <div id="welcome">
           <img src="ja.jpg" alt="Skalek AI" class="big-avatar">
-          <h2>Skalek AI 3.1</h2>
+          <h2>Skalek AI</h2>
         </div>
         <div id="center-input-wrap">
           <div class="input-wrap">
