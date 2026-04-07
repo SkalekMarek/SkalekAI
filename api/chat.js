@@ -5,12 +5,11 @@ export default async function handler(req, res) {
 
   try {
     const { messages } = req.body;
+    // Using the new, cleaner variable name
+    const apiKey = process.env.GOOGLE_API_KEY;
 
-    // Pulling the API Key from your Vercel Environment Variables
-    const apiKey = process.env.GEMINI_3_1_FLASH_LITE;
-
-    // Pulling the Model ID. 
-    const modelId = process.env.GEMINI_MODEL_ID || 'gemini-3.1-flash-lite';
+    // Defaulting to the Gemini 3.1 Flash-Lite Preview ID
+    const modelId = process.env.GEMINI_MODEL_ID || 'gemini-3.1-flash-lite-preview';
 
     if (!apiKey) {
       return res.status(500).json({ error: 'API Key is missing in Vercel settings' });
@@ -30,12 +29,10 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // NEW: If the Gemini API throws an error, catch it here!
     if (!response.ok) {
-      console.error("Gemini API Error:", data);
-      // Pass the specific error message to the frontend
+      console.error("API Error:", data);
       return res.status(response.status).json({
-        error: data.error?.message || 'Unknown API Error from Google'
+        error: data.error?.message || 'Gemini API rejected the request.'
       });
     }
 
