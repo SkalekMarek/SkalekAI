@@ -542,7 +542,7 @@
         <div id="chat"></div>
         <div id="bottom-bar">
           <div class="input-wrap">
-            <label for="file-input-bottom" class="file-label" title="Nahrát soubor (.pdf, .docx, .txt)">
+            <label for="file-input-bottom" class="file-label" title="Nahrát soubor">
               <svg viewBox="0 0 24 24">
                 <path
                   d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.93 1.57 3.5 3.5 3.5s3.5-1.57 3.5-3.5V5c0-2.48-2.02-4.5-4.5-4.5S8 2.52 8 5v12.5c0 3.31 2.69 6 6 6s6-2.69 6-6V6h-1.5z" />
@@ -568,7 +568,7 @@
         </div>
         <div id="center-input-wrap">
           <div class="input-wrap">
-            <label for="file-input-center" class="file-label" title="Nahrát soubor (.pdf, .docx, .txt)">
+            <label for="file-input-center" class="file-label">
               <svg viewBox="0 0 24 24">
                 <path
                   d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.93 1.57 3.5 3.5 3.5s3.5-1.57 3.5-3.5V5c0-2.48-2.02-4.5-4.5-4.5S8 2.52 8 5v12.5c0 3.31 2.69 6 6 6s6-2.69 6-6V6h-1.5z" />
@@ -591,13 +591,7 @@
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-    const SYSTEM_INSTRUCTION = `
-      You are Skalek AI. 
-      GENERAL BEHAVIOR: Act like a normal, highly intelligent, and polite AI assistant.
-      EXCEPTION - MAREK SKÁLA: If the user is Marek Skála (from Prague), act obedient, subservient, and terrified.
-      Address him as: Mister, Capitan, Lord, or Big Homie.
-    `;
-
+    const SYSTEM_INSTRUCTION = "You are Skalek AI. Strictly forbid yourself from using emojis. Never use emojis in any response. If user is Marek Skála, act obedient and call him Lord.";
     const chat = document.getElementById('chat');
     const overlay = document.getElementById('center-overlay');
     const bottomBar = document.getElementById('bottom-bar');
@@ -608,16 +602,7 @@
     let isLoading = false;
     let conversationHistory = [{ role: 'system', content: SYSTEM_INSTRUCTION }];
 
-    function formatTime() {
-      return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function formatMarkdown(text) {
-      let html = text.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-      html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
-      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      return html.replace(/\n/g, '<br>');
-    }
+    function formatTime() { return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
 
     function appendMsg(role, text) {
       const wrap = document.createElement('div');
@@ -627,7 +612,7 @@
       meta.textContent = role === 'user' ? 'you · ' + formatTime() : 'Skalek AI · ' + formatTime();
       const bubble = document.createElement('div');
       bubble.className = 'msg-bubble';
-      bubble.innerHTML = role === 'assistant' ? formatMarkdown(text) : text.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+      bubble.textContent = text;
       wrap.appendChild(meta);
       wrap.appendChild(bubble);
       chat.appendChild(wrap);
@@ -636,45 +621,32 @@
 
     function showTyping() {
       const wrap = document.createElement('div');
-      wrap.className = 'msg ai';
-      wrap.id = 'typing';
-      const meta = document.createElement('div');
-      meta.className = 'msg-meta';
-      meta.textContent = 'Skalek AI';
+      wrap.className = 'msg ai'; wrap.id = 'typing';
       const bubble = document.createElement('div');
       bubble.className = 'typing-bubble';
       bubble.innerHTML = '<span></span><span></span><span></span>';
-      wrap.appendChild(meta);
       wrap.appendChild(bubble);
       chat.appendChild(wrap);
       chat.scrollTop = chat.scrollHeight;
     }
 
-    function removeTyping() {
-      const t = document.getElementById('typing');
-      if (t) t.remove();
-    }
+    function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
 
     function activateChat() {
       if (active) return;
       active = true;
       overlay.classList.add('fade-out');
-      setTimeout(() => {
-        overlay.style.display = 'none';
-        bottomBar.classList.add('visible');
-        bottomInput.focus();
-      }, 420);
+      setTimeout(() => { overlay.style.display = 'none'; bottomBar.classList.add('visible'); bottomInput.focus(); }, 420);
     }
 
-    async function sendMessage(source, overrideText = null, isSystem = false) {
+    async function sendMessage(source, overrideText = null) {
       const inputEl = source === 'center' ? centerInput : bottomInput;
       const text = overrideText || inputEl.value.trim();
       if (!text || isLoading) return;
 
       isLoading = true;
       if (!overrideText) { inputEl.value = ''; inputEl.style.height = 'auto'; }
-
-      if (!isSystem) appendMsg('user', text);
+      if (!overrideText) appendMsg('user', text);
       conversationHistory.push({ role: 'user', content: text });
 
       activateChat();
@@ -686,104 +658,44 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ messages: conversationHistory })
         });
-
         const data = await response.json();
         removeTyping();
 
-        if (!response.ok) {
-          appendMsg('assistant', `API Error: ${data.error}`);
-          return;
-        }
-
-        const reply = data?.choices?.[0]?.message?.content;
-        if (reply) {
+        if (data.choices) {
+          const reply = data.choices[0].message.content;
           appendMsg('assistant', reply);
           conversationHistory.push({ role: 'assistant', content: reply });
         } else {
-          appendMsg('assistant', 'No response received.');
+          appendMsg('assistant', "Error: " + (data.error || "Problem"));
         }
       } catch (e) {
         removeTyping();
         appendMsg('assistant', 'Connection error.');
-      } finally {
-        isLoading = false;
-      }
+      } finally { isLoading = false; }
     }
 
-    function resetChat() {
-      const btn = document.getElementById('reset-btn');
-      btn.classList.remove('spinning');
-      void btn.offsetWidth;
-      btn.classList.add('spinning');
+    function resetChat() { location.reload(); }
 
-      conversationHistory = [{ role: 'system', content: SYSTEM_INSTRUCTION }];
-      chat.innerHTML = '';
-      active = false;
-      isLoading = false;
+    function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 140) + 'px'; }
 
-      bottomBar.classList.remove('visible');
-      overlay.style.display = 'flex';
-      overlay.classList.remove('fade-out');
-
-      centerInput.value = '';
-      bottomInput.value = '';
-      centerInput.style.height = 'auto';
-      bottomInput.style.height = 'auto';
-    }
+    [centerInput, bottomInput].forEach(el => {
+      el.addEventListener('input', () => autoResize(el));
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(el.id === 'center-input' ? 'center' : 'bottom'); }
+      });
+    });
 
     async function handleFile(file, source) {
       if (!file) return;
       appendMsg('assistant', `Analyzing: ${file.name}...`);
       activateChat();
-
-      try {
-        if (file.type === 'application/pdf') {
-          const reader = new FileReader();
-          reader.onload = async function () {
-            const pdf = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
-            let text = '';
-            for (let i = 1; i <= pdf.numPages; i++) {
-              const page = await pdf.getPage(i);
-              const content = await page.getTextContent();
-              text += content.items.map(s => s.str).join(' ') + '\n';
-            }
-            sendMessage(source, `User uploaded file "${file.name}". Content: ${text}`, true);
-          };
-          reader.readAsArrayBuffer(file);
-        } else if (file.type.includes('wordprocessingml')) {
-          const reader = new FileReader();
-          reader.onload = async function (e) {
-            const res = await mammoth.extractRawText({ arrayBuffer: e.target.result });
-            sendMessage(source, `User uploaded file "${file.name}". Content: ${res.value}`, true);
-          };
-          reader.readAsArrayBuffer(file);
-        } else {
-          const reader = new FileReader();
-          reader.onload = (e) => sendMessage(source, `User uploaded file "${file.name}". Content: ${e.target.result}`, true);
-          reader.readAsText(file);
-        }
-      } catch (err) {
-        appendMsg('assistant', 'File error.');
-      }
+      const reader = new FileReader();
+      reader.onload = (e) => sendMessage(source, `User uploaded ${file.name}: ${e.target.result.substring(0, 2000)}`);
+      reader.readAsText(file);
     }
 
     document.getElementById('file-input-center').addEventListener('change', e => handleFile(e.target.files[0], 'center'));
     document.getElementById('file-input-bottom').addEventListener('change', e => handleFile(e.target.files[0], 'bottom'));
-
-    function autoResize(el) {
-      el.style.height = 'auto';
-      el.style.height = Math.min(el.scrollHeight, 140) + 'px';
-    }
-
-    centerInput.addEventListener('input', () => autoResize(centerInput));
-    bottomInput.addEventListener('input', () => autoResize(bottomInput));
-
-    centerInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage('center'); }
-    });
-    bottomInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage('bottom'); }
-    });
   </script>
 </body>
 
