@@ -5,11 +5,11 @@ export default async function handler(req, res) {
 
   try {
     const { messages } = req.body;
-    // Using the new, cleaner variable name
-    const apiKey = process.env.GOOGLE_API_KEY;
+    // Check for standard API Key names
+    const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
 
-    // Defaulting to the Gemini 3.1 Flash-Lite Preview ID
-    const modelId = process.env.GEMINI_MODEL_ID || 'gemini-3.1-flash-lite-preview';
+    // Defaulting to the Gemini 1.5 Flash if ID is missing
+    const modelId = process.env.GEMINI_MODEL_ID || 'gemini-1.5-flash';
 
     if (!apiKey) {
       return res.status(500).json({ error: 'API Key is missing in Vercel settings' });
