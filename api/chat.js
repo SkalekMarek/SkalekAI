@@ -7,15 +7,15 @@ export default async function handler(req, res) {
     try {
       const { messages } = req.body;
   
-      // This calls Groq using the key you will put in the Vercel Dashboard
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      // This calls Gemini using the new key
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+          'Authorization': `Bearer AIzaSyCsgBX0MAP9FjwwknCnUVuPgsjizWIbQFc`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
+          model: 'gemini-3.1-flash-lite',
           messages: messages,
         }),
       });
