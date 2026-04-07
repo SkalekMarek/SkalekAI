@@ -66,7 +66,7 @@
       align-items: center;
       justify-content: center;
       gap: 12px;
-      padding: 22px 16px 16px; /* Adjusted padding for better centering */
+      padding: 22px 52px 16px;
       flex-shrink: 0;
       position: relative;
     }
@@ -619,8 +619,12 @@
       if (!text || isLoading) return;
 
       isLoading = true;
-      if (!overrideText) { inputEl.value = ''; inputEl.style.height = 'auto'; }
-      if (!overrideText) appendMsg('user', text);
+      if (!overrideText) { 
+          inputEl.value = ''; 
+          inputEl.style.height = 'auto'; 
+          appendMsg('user', text);
+      }
+      
       conversationHistory.push({ role: 'user', content: text });
 
       activateChat();
@@ -663,9 +667,29 @@
       if (!file) return;
       appendMsg('assistant', `Analyzing: ${file.name}...`);
       activateChat();
-      const reader = new FileReader();
-      reader.onload = (e) => sendMessage(source, `User uploaded ${file.name}: ${e.target.result.substring(0, 2000)}`);
-      reader.readAsText(file);
+      
+      try {
+        let text = "";
+        if (file.name.endsWith('.pdf')) {
+          const arrayBuffer = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            text += content.items.map(item => item.str).join(' ') + "\n";
+          }
+        } else if (file.name.endsWith('.docx')) {
+          const arrayBuffer = await file.arrayBuffer();
+          const result = await mammoth.extractRawText({ arrayBuffer });
+          text = result.value;
+        } else {
+          text = await file.text();
+        }
+        
+        sendMessage(source, `[User uploaded ${file.name}]\n\nContent:\n${text.substring(0, 8000)}`);
+      } catch (e) {
+        appendMsg('assistant', "Failed to read file.");
+      }
     }
 
     document.getElementById('file-input-center').addEventListener('change', e => handleFile(e.target.files[0], 'center'));
