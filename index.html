@@ -293,14 +293,21 @@
       letter-spacing: .05em;
     }
 
-    /* ── plain inline code ── */
-    code:not(.hljs) {
+    /* ── plain inline code (NOT inside code windows) ── */
+    .ai-text > span code,
+    .msg-bubble code {
       color: var(--accent);
       font-family: 'Roboto Mono', monospace;
       font-size: .82rem;
       background: rgba(200,249,2,.08);
       padding: 1px 5px;
       border-radius: 4px;
+    }
+
+    /* make sure hljs spans are never green */
+    .code-window .hljs,
+    .code-window .hljs * {
+      color: inherit;
     }
 
     /* ── code window ── */
@@ -354,7 +361,7 @@
     .code-window pre {
       margin: 0;
       padding: 16px 18px;
-      overflow-x: auto;
+      overflow-x: hidden;   /* hide scrollbar; long lines clipped, selectable by cursor drag */
       background: #161616 !important;
       border: none;
       border-radius: 0;
@@ -366,6 +373,8 @@
       font-size: .8rem;
       line-height: 1.75;
       padding: 0;
+      white-space: pre;   /* keep long lines as-is, no wrapping */
+      display: block;
     }
 
     .typing-bubble {
