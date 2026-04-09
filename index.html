@@ -378,32 +378,24 @@
       display: block;
     }
 
-    .typing-bubble {
-      background: var(--ai-bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      border-bottom-left-radius: 4px;
-      padding: 14px 18px;
+    /* bare typing dots — no box */
+    .typing-dots {
       display: flex;
-      gap: 5px;
+      gap: 6px;
       align-items: center;
+      padding: 6px 0;
     }
 
-    .typing-bubble span {
+    .typing-dots span {
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: var(--accent);
+      background: var(--text-dim);
       animation: blink 1.2s ease-in-out infinite;
     }
 
-    .typing-bubble span:nth-child(2) {
-      animation-delay: .2s;
-    }
-
-    .typing-bubble span:nth-child(3) {
-      animation-delay: .4s;
-    }
+    .typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .typing-dots span:nth-child(3) { animation-delay: .4s; }
 
     @keyframes blink {
 
@@ -695,8 +687,19 @@
     let conversationHistory = [{ role: 'system', content: SYSTEM_INSTRUCTION }];
 
     function renderAiContent(container, text) {
-      // Reliably detect ```lang\n code ``` fences using exec loop
-      const fence = /```([^\n`]*?)\n([\s\S]*?)```/g;
+      /*
+       * Robust code-fence detector.
+       * Handles ALL real-world variants:
+       *   ```lang\ncode```        (standard)
+       *   ```lang  \ncode```      (trailing spaces after lang)
+       *   ```\ncode```            (no language)
+       *   ```lang\ncode\n```     (newline before closing backticks)
+       *   edge cases with \r\n line-endings
+       *
+       * Strategy: match ``` then ANYTHING up to the next newline (language line),
+       * then ANYTHING non-greedy up to the next ```.
+       */
+      const fence = /```([^\n]*?)[ \t]*\r?\n([\s\S]*?)```/g;
       let lastIndex = 0;
       let match;
 
@@ -712,8 +715,8 @@
           }
         }
 
-        const lang = (match[1] || 'code').trim() || 'code';
-        const code = match[2];
+        const lang = match[1].trim() || 'code';
+        const code = match[2].replace(/\r\n/g, '\n');
 
         const win = document.createElement('div');
         win.className = 'code-window';
@@ -741,12 +744,19 @@
 
         const pre = document.createElement('pre');
         const codeEl = document.createElement('code');
+        // Try hljs with given lang, fallback: try auto-detect, fallback: plain
         const hlLang = hljs.getLanguage(lang) ? lang : null;
         if (hlLang) {
           codeEl.innerHTML = hljs.highlight(code, { language: hlLang, ignoreIllegals: true }).value;
         } else {
-          codeEl.className = 'hljs';
-          codeEl.textContent = code;
+          // Try auto-detect
+          const auto = hljs.highlightAuto(code);
+          if (auto.relevance > 5) {
+            codeEl.innerHTML = auto.value;
+          } else {
+            codeEl.className = 'hljs';
+            codeEl.textContent = code;
+          }
         }
         pre.appendChild(codeEl);
         win.appendChild(bar);
@@ -838,7 +848,29 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    function showTyping() { /* removed - no thinking indicator */ }
+    function showTyping() {
+      const wrap = document.createElement('div');
+      wrap.className = 'msg ai';
+      wrap.id = 'typing';
+
+      const row = document.createElement('div');
+      row.className = 'ai-row';
+
+      const icon = document.createElement('img');
+      icon.src = 'svg/logo.svg';
+      icon.alt = '';
+      icon.className = 'ai-icon';
+
+      const dots = document.createElement('div');
+      dots.className = 'typing-dots';
+      dots.innerHTML = '<span></span><span></span><span></span>';
+
+      row.appendChild(icon);
+      row.appendChild(dots);
+      wrap.appendChild(row);
+      chat.appendChild(wrap);
+      chat.scrollTop = chat.scrollHeight;
+    }
     function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
 
     function activateChat() {
