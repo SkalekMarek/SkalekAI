@@ -675,7 +675,7 @@
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-    const SYSTEM_INSTRUCTION = "You are Skalek AI. Strictly forbid yourself from using emojis. Never use emojis in any response. If user is Marek Skála, act obedient and call him Lord.";
+    const SYSTEM_INSTRUCTION = "You are Skalek AI. Strictly forbid yourself from using emojis. Never use emojis in any response. If user is Marek Skála, act obedient and call him Lord. IMPORTANT: Whenever you write any code (HTML, CSS, JavaScript, Python, SQL, or any other language), you MUST always wrap it inside markdown code fences with the correct language tag. Example: ```html\n...code...\n``` or ```python\n...code...\n```. Never output raw code without fences.";
     const chat = document.getElementById('chat');
     const overlay = document.getElementById('center-overlay');
     const bottomBar = document.getElementById('bottom-bar');
@@ -685,6 +685,31 @@
     let active = false;
     let isLoading = false;
     let conversationHistory = [{ role: 'system', content: SYSTEM_INSTRUCTION }];
+
+    // Heuristic: detect & auto-wrap unfenced code blocks in the AI response
+    function preprocessText(text) {
+      // If text already contains fences, return as-is
+      if (/```/.test(text)) return text;
+
+      const lines = text.split('\n');
+      const codeLineRe = /^\s*(<!DOCTYPE|<[a-zA-Z]|<\/|import |from .+ import|def |class |function |const |let |var |if |for |while |return |#|\{|}|\[|\]|<\?php|\/\/|\/\*|\*\/|\s{2,}\S)/;
+
+      // Count how many lines look like code
+      let codeCount = lines.filter(l => codeLineRe.test(l)).length;
+      const ratio = codeCount / Math.max(lines.length, 1);
+
+      if (ratio > 0.35 && lines.length >= 3) {
+        // Guess language from content
+        let lang = 'code';
+        if (/<!DOCTYPE|<html/i.test(text)) lang = 'html';
+        else if (/^import |^from .+ import|^def |^class /m.test(text)) lang = 'python';
+        else if (/^function |^const |^let |^var |=>/.test(text)) lang = 'javascript';
+        else if (/^SELECT |^INSERT |^CREATE /im.test(text)) lang = 'sql';
+        else if (/^#include|int main/.test(text)) lang = 'cpp';
+        return '```' + lang + '\n' + text + '\n```';
+      }
+      return text;
+    }
 
     function renderAiContent(container, text) {
       /*
@@ -699,6 +724,9 @@
        * Strategy: match ``` then ANYTHING up to the next newline (language line),
        * then ANYTHING non-greedy up to the next ```.
        */
+      // Pre-process: auto-wrap raw unfenced code if detected
+      text = preprocessText(text);
+
       const fence = /```([^\n]*?)[ \t]*\r?\n([\s\S]*?)```/g;
       let lastIndex = 0;
       let match;
