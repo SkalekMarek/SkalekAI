@@ -4,5 +4,4 @@ export default clerkMiddleware();
 
 export const config = {
     matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
-    runtime: 'nodejs', // This MUST be inside the config object!
 };
