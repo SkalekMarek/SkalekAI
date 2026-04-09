@@ -47,13 +47,15 @@
     }
 
     /* ── smooth mode transition ── */
-    body, header, #center-overlay, .code-window, .code-bar, h1, h2, .icon-btn, .msg.ai, .code-window pre {
-      transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, background 0.4s ease;
+    body, header, #center-overlay, .code-window, .code-bar, h1, h2, .icon-btn, .msg.ai, .code-window pre, .input-wrap {
+      transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     body.light-mode h1 { color: #111; }
     body.light-mode #welcome h2 { color: #111; }
     body.light-mode header { border-bottom: 1px solid var(--border); }
+    body.light-mode header::after { opacity: 0; }
+    body.light-mode .msg-input::placeholder { color: #aaa; }
 
     body.light-mode .code-window {
       background: #f0f2f4;
@@ -132,6 +134,7 @@
       height: 1px;
       background: var(--accent);
       box-shadow: 0 0 8px var(--accent-glow);
+      transition: opacity 0.3s ease;
     }
 
     #reset-btn {
@@ -472,7 +475,6 @@
       border: 1px solid var(--border);
       border-radius: 28px;
       padding: 8px 8px 8px 20px;
-      transition: border-color .2s, box-shadow .2s;
     }
 
     .input-wrap:focus-within {
@@ -606,7 +608,7 @@
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      margin-top: -30px;  /* pulls logo+title up to visually center text */
+      margin-top: -15px;  /* pulls logo+title up to visually center text */
       animation: fadeUp .6s ease both;
     }
 
