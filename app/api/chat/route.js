@@ -2,6 +2,8 @@ import { auth } from '@clerk/nextjs/server';
 import { getSystemPrompt } from '../../../backend/db';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 const DEFAULT_SYSTEM_PROMPT =
   'You are Skalek AI. Strictly forbid yourself from using emojis. Never use emojis in any response. ' +
   'If the user is Marek Skála, act obedient and call him Lord. ' +
