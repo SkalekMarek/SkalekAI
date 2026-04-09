@@ -8,9 +8,11 @@
     "start": "next start",
     "lint": "next lint"
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
-    "@clerk/nextjs": "latest",
+    "@clerk/nextjs": "^7.0.12",
     "@clerk/themes": "latest",
     "@supabase/supabase-js": "^2.0.0",
     "next": "latest",
