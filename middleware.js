@@ -1,6 +1,6 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
 
-// This tells Vercel to use the full Node.js environment instead of the "Edge"
+// This forces Vercel to use Node.js instead of the limited Edge Runtime
 export const runtime = 'nodejs';
 
 export default clerkMiddleware();
