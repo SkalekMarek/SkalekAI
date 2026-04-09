@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { SignedIn, SignedOut, SignIn, UserButton, useUser, useAuth } from '@clerk/nextjs';
+import { Show, SignIn, UserButton, useUser, useAuth } from '@clerk/nextjs';
 import { createClient } from '@supabase/supabase-js';
 
 // Pre-load Highlight JS in a simple way for React
@@ -256,16 +256,16 @@ export default function ChatApp() {
   return (
     <div id="root">
       {/* AUTH OVERLAY */}
-      <SignedOut>
+      <Show when="signed-out">
         <div id="auth-overlay">
           <img src="/svg/logo.svg" className="auth-logo" alt="Skalek AI" />
           <h2>Welcome to Skalek AI</h2>
           <p className="auth-sub">Sign in to start chatting</p>
           <div id="clerk-signin"><SignIn routing="hash" /></div>
         </div>
-      </SignedOut>
+      </Show>
 
-      <SignedIn>
+      <Show when="signed-in">
         <div id="main" ref={mainRef}>
           <header>
             {/* Left side actions */}
@@ -430,7 +430,7 @@ export default function ChatApp() {
             </button>
           </div>
         </div>
-      </SignedIn>
+      </Show>
     </div>
   );
 }
