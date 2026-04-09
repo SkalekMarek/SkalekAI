@@ -1,9 +1,12 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
 
-// This forces Vercel to use Node.js instead of the limited Edge Runtime
+// This forces the full Node.js environment, supporting #crypto and Clerk internals
 export const runtime = 'nodejs';
 
-export default clerkMiddleware();
+// Next.js 16 expects the function to be named 'proxy'
+export default function proxy(request) {
+  return clerkMiddleware()(request);
+}
 
 export const config = {
   matcher: [
