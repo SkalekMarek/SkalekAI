@@ -46,15 +46,13 @@
       --icon-btn-hover: #d5d5d5;
     }
 
-    /* ── smooth mode transition ── */
-    body, header, #center-overlay, .code-window, .code-bar, h1, h2, .icon-btn, .msg.ai, .code-window pre, .input-wrap {
-      transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    body, header, h1, h2, .icon-btn, .msg.ai, .code-window, .code-bar, .code-window pre {
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
     }
 
     body.light-mode h1 { color: #111; }
     body.light-mode #welcome h2 { color: #111; }
     body.light-mode header { border-bottom: 1px solid var(--border); }
-    body.light-mode header::after { opacity: 0; }
     body.light-mode .msg-input::placeholder { color: #aaa; }
 
     body.light-mode .code-window {
@@ -122,19 +120,6 @@
       top: 0;
       z-index: 100;
       background: var(--bg);
-    }
-
-    header::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 40px;
-      height: 1px;
-      background: var(--accent);
-      box-shadow: 0 0 8px var(--accent-glow);
-      transition: opacity 0.3s ease;
     }
 
     #reset-btn {
@@ -475,6 +460,7 @@
       border: 1px solid var(--border);
       border-radius: 28px;
       padding: 8px 8px 8px 20px;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
     }
 
     .input-wrap:focus-within {
@@ -590,7 +576,7 @@
       justify-content: center;
       gap: 20px;
       z-index: 20;
-      transition: opacity .4s ease, transform .4s ease;
+      transition: opacity .4s ease, transform .4s ease, background-color 0.3s ease;
       padding: 0 16px;
       pointer-events: all;
       background: var(--bg);
