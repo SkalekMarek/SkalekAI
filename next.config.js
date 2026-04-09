@@ -1,9 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  turbopack: {
-    root: '.',
-  },
-  transpilePackages: ['@clerk/nextjs'],
+  experimental: {}, // Keep this empty
 };
-
 module.exports = nextConfig;
