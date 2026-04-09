@@ -34,6 +34,36 @@
       --icon-btn-hover: #333333;
     }
 
+    /* ── light mode ── */
+    body.light-mode {
+      --bg: #f7f7f7;
+      --surface: #eeeeee;
+      --border: #d8d8d8;
+      --text: #1a1a1a;
+      --text-dim: #888;
+      --ai-bg: #ffffff;
+      --icon-btn: #e2e2e2;
+      --icon-btn-hover: #d5d5d5;
+    }
+
+    body.light-mode h1 { color: #111; }
+    body.light-mode #welcome h2 { color: #111; }
+    body.light-mode header { border-bottom: 1px solid var(--border); }
+
+    body.light-mode .code-window {
+      background: #f0f2f4;
+      border-color: #d8dadc;
+    }
+    body.light-mode .code-bar {
+      background: #e4e7ea;
+      border-bottom-color: #d8dadc;
+    }
+    body.light-mode .code-window pre {
+      background: #f0f2f4 !important;
+    }
+    body.light-mode .code-lang { color: #555; }
+    body.light-mode .icon-btn:hover { border-color: #bbb; }
+
     *,
     *::before,
     *::after {
@@ -63,8 +93,16 @@
       flex-direction: column;
       min-width: 0;
       overflow-x: hidden;
+      overflow-y: auto;   /* scrollbar lives here — right edge of screen */
+      scroll-behavior: smooth;
       position: relative;
     }
+
+    /* scrollbar on the full-width #main = right edge of viewport */
+    #main::-webkit-scrollbar { width: 4px; }
+    #main::-webkit-scrollbar-track { background: transparent; }
+    #main::-webkit-scrollbar-thumb { background: #2e2e2e; border-radius: 2px; }
+    #main::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
     header {
       display: flex;
@@ -72,9 +110,11 @@
       justify-content: center;
       gap: 12px;
       padding: 22px 16px 16px;
-      /* Adjusted padding for better centering */
       flex-shrink: 0;
-      position: relative;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg);
     }
 
     header::after {
@@ -90,6 +130,14 @@
     }
 
     #reset-btn {
+      position: absolute;
+      right: 54px;
+      top: 50%;
+      transform: translateY(-50%);
+      margin-top: 3px;
+    }
+
+    #mode-btn {
       position: absolute;
       right: 16px;
       top: 50%;
@@ -109,7 +157,7 @@
       font-weight: 900;
       font-size: 1.5rem;
       letter-spacing: 0.02em;
-      color: #fff;
+      color: var(--text);
       line-height: 1;
     }
 
@@ -145,10 +193,6 @@
     }
 
     #content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
       max-width: 760px;
       width: 100%;
       margin: 0 auto;
@@ -156,31 +200,10 @@
     }
 
     #chat {
-      flex: 1;
-      overflow-y: auto;
       padding: 24px 0 16px;
       display: flex;
       flex-direction: column;
       gap: 20px;
-      scroll-behavior: smooth;
-      min-height: 0;
-    }
-
-    #chat::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    #chat::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    #chat::-webkit-scrollbar-thumb {
-      background: #2e2e2e;
-      border-radius: 2px;
-    }
-
-    #chat::-webkit-scrollbar-thumb:hover {
-      background: var(--accent);
     }
 
     /* ── message wrapper ── */
@@ -552,7 +575,7 @@
     }
 
     #center-overlay {
-      position: absolute;
+      position: fixed;   /* fixed so it covers viewport, not #main scroll height */
       inset: 0;
       display: flex;
       flex-direction: column;
@@ -563,6 +586,7 @@
       transition: opacity .4s ease, transform .4s ease;
       padding: 0 16px;
       pointer-events: all;
+      background: var(--bg);
     }
 
     #center-overlay.fade-out {
@@ -621,6 +645,20 @@
               d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
           </svg>
         </button>
+        <button class="icon-btn" id="mode-btn" onclick="toggleMode()" title="Toggle light / dark mode">
+          <!-- sun icon (shown in dark mode to switch to light) -->
+          <svg id="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
       </header>
 
       <div id="content">
@@ -677,10 +715,29 @@
 
     const SYSTEM_INSTRUCTION = "You are Skalek AI. Strictly forbid yourself from using emojis. Never use emojis in any response. If user is Marek Skála, act obedient and call him Lord. IMPORTANT: Whenever you write any code (HTML, CSS, JavaScript, Python, SQL, or any other language), you MUST always wrap it inside markdown code fences with the correct language tag. Example: ```html\n...code...\n``` or ```python\n...code...\n```. Never output raw code without fences.";
     const chat = document.getElementById('chat');
+    const mainEl = document.getElementById('main');
     const overlay = document.getElementById('center-overlay');
     const bottomBar = document.getElementById('bottom-bar');
     const centerInput = document.getElementById('center-input');
     const bottomInput = document.getElementById('bottom-input');
+
+    function scrollToBottom() { mainEl.scrollTop = mainEl.scrollHeight; }
+
+    function toggleMode() {
+      const light = document.body.classList.toggle('light-mode');
+      const icon = document.getElementById('mode-icon');
+      if (light) {
+        // moon icon (in light mode, switch back to dark)
+        icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+        icon.setAttribute('fill', 'currentColor');
+        icon.removeAttribute('stroke');
+      } else {
+        // sun icon
+        icon.innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+        icon.setAttribute('stroke', 'currentColor');
+        icon.removeAttribute('fill');
+      }
+    }
 
     let active = false;
     let isLoading = false;
@@ -873,7 +930,7 @@
       }
 
       chat.appendChild(wrap);
-      chat.scrollTop = chat.scrollHeight;
+      scrollToBottom();
     }
 
     function showTyping() {
@@ -897,7 +954,7 @@
       row.appendChild(dots);
       wrap.appendChild(row);
       chat.appendChild(wrap);
-      chat.scrollTop = chat.scrollHeight;
+      scrollToBottom();
     }
     function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
 
