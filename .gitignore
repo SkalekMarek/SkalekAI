@@ -1,0 +1,9 @@
+# Secrets
+.env.local
+*.env
+
+# Dependencies  
+node_modules/
+
+# Vercel
+.vercel
