@@ -213,17 +213,6 @@ function ChatContent() {
     setIsLightMode(!isLightMode);
   };
 
-  // Heuristic from Vanilla logic: wrap unfenced code
-  const preprocessText = (text) => {
-    if (/```/.test(text)) return text;
-    const lines = text.split('\n');
-    const codeLineRe = /^\s*(<!DOCTYPE|<[a-zA-Z]|<\/|import |from .+ import|def |class |function |const |let |var |if |for |while |return |#|\{|\}|\[|\]|<\?php|\/\/|\/\*|\*\/|\s{2,}\S)/;
-    let codeCount = lines.filter(l => codeLineRe.test(l)).length;
-    if (codeCount >= Math.max(3, lines.length * 0.4) || text.includes(';') || text.includes('=')) {
-      return '```\n' + text + '\n```';
-    }
-    return text;
-  };
 
   const handlePreview = (messageText, targetLang) => {
     const codeBlockRe = /```([\w-]*)\n([\s\S]*?)(?:```|$)/g;
@@ -273,8 +262,7 @@ function ChatContent() {
   };
 
   // Parses markdown fences and renders raw text and code blocks
-  const renderMessageContent = (rawText) => {
-    const text = preprocessText(rawText);
+  const renderMessageContent = (text) => {
     const elements = [];
     let lastIndex = 0;
     const codeBlockRe = /```([\w-]*)\n([\s\S]*?)(?:```|$)/g;
@@ -504,19 +492,23 @@ function ChatContent() {
 
 // SAFE CODE COMPONENT: Isolates highlighting to prevent main page crashes
 function SafeCodeBlock({ lang, code, rawText, handlePreview }) {
-  const codeRef = useRef(null);
-  
+  const [highlighted, setHighlighted] = useState('');
+
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.hljs && codeRef.current) {
+    if (typeof window !== 'undefined' && window.hljs) {
       try {
         const hlLang = window.hljs.getLanguage(lang) ? lang : null;
         if (hlLang) {
-          // Use highlightElement for maximum stability and to avoid dangerouslySetInnerHTML crashes
-          window.hljs.highlightElement(codeRef.current);
+          const result = window.hljs.highlight(code, { language: hlLang, ignoreIllegals: true });
+          setHighlighted(result.value);
+        } else {
+          setHighlighted(escapeHtml(code));
         }
       } catch (e) {
-        console.warn('Highlight failed for', lang, e);
+        setHighlighted(escapeHtml(code));
       }
+    } else {
+      setHighlighted(escapeHtml(code));
     }
   }, [lang, code]);
 
@@ -554,9 +546,7 @@ function SafeCodeBlock({ lang, code, rawText, handlePreview }) {
         </div>
       </div>
       <pre>
-        <code ref={codeRef} className={`hljs language-${lang}`}>
-          {code}
-        </code>
+        <code className={`hljs language-${lang}`} dangerouslySetInnerHTML={{ __html: highlighted || escapeHtml(code) }} />
       </pre>
     </div>
   );

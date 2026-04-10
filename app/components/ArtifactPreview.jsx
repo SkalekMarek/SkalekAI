@@ -9,7 +9,8 @@ export default function ArtifactPreview({ artifact, onClose }) {
   if (!artifact) return null;
 
   const { language, title, code } = artifact;
-  const codeRef = useRef(null);
+  const [highlightedCode, setHighlightedCode] = useState('');
+  const [blobUrl, setBlobUrl] = useState(null);
 
   const escapeHtml = (unsafe) => {
     return unsafe
@@ -22,17 +23,33 @@ export default function ArtifactPreview({ artifact, onClose }) {
 
   useEffect(() => {
     // Apply syntax highlighting to the code view
-    if (view === 'code' && typeof window !== 'undefined' && window.hljs && codeRef.current) {
-      try {
-        const hlLang = window.hljs.getLanguage(language) ? language : null;
-        if (hlLang) {
-          window.hljs.highlightElement(codeRef.current);
+    if (view === 'code') {
+      if (typeof window !== 'undefined' && window.hljs) {
+        try {
+          const hlLang = window.hljs.getLanguage(language) ? language : null;
+          if (hlLang) {
+            const result = window.hljs.highlight(code, { language: hlLang, ignoreIllegals: true });
+            setHighlightedCode(result.value);
+          } else {
+            setHighlightedCode(escapeHtml(code));
+          }
+        } catch (e) {
+          setHighlightedCode(escapeHtml(code));
         }
-      } catch (e) {
-        console.warn('Highlight failed for', language, e);
+      } else {
+        setHighlightedCode(escapeHtml(code));
       }
     }
   }, [view, code, language]);
+
+  useEffect(() => {
+    if (view === 'preview' && code) {
+      const blob = new Blob([getSrcDoc()], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      setBlobUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [view, code, language, iframeKey]);
 
   const getSrcDoc = () => {
     if (language === 'html' || language === 'xml') {
@@ -143,14 +160,14 @@ export default function ArtifactPreview({ artifact, onClose }) {
         {view === 'preview' ? (
           <iframe
             key={iframeKey}
-            srcDoc={getSrcDoc()}
+            src={blobUrl || 'about:blank'}
             sandbox="allow-scripts"
             className="preview-iframe"
             title="Artifact Preview"
           />
         ) : (
           <div className="code-view">
-            <pre><code ref={codeRef} className={`hljs language-${language}`}>{code}</code></pre>
+            <pre><code className="hljs" dangerouslySetInnerHTML={{ __html: highlightedCode || escapeHtml(code) }} /></pre>
           </div>
         )}
       </div>
