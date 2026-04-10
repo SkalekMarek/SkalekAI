@@ -817,30 +817,43 @@
 
     /* GREEN EXCEPTIONS (Higher specificity using IDs + Tags + Classes) */
     body #clerk-components a[href*="clerk"],
+    body #clerk-components a[href*="clerk"] *,
     body #clerk-components [class*="development"],
+    body #clerk-components [class*="development"] *,
     body #clerk-components [class*="Development"],
+    body #clerk-components [class*="Development"] *,
     body #clerk-components .cl-watermark,
     body #clerk-components .cl-watermark *,
     body #clerk-components .cl-securedByText,
     body .cl-rootBox a[href*="clerk"],
+    body .cl-rootBox a[href*="clerk"] *,
     body .cl-rootBox [class*="development"],
+    body .cl-rootBox [class*="development"] *,
     body .cl-rootBox [class*="Development"],
+    body .cl-rootBox [class*="Development"] *,
     body .cl-rootBox .cl-watermark,
     body .cl-rootBox .cl-watermark *,
     body .cl-rootBox .cl-securedByText,
     body .cl-userButtonPopoverCard a[href*="clerk"],
+    body .cl-userButtonPopoverCard a[href*="clerk"] *,
     body .cl-userButtonPopoverCard [class*="development"],
+    body .cl-userButtonPopoverCard [class*="development"] *,
     body .cl-userButtonPopoverCard [class*="Development"],
+    body .cl-userButtonPopoverCard [class*="Development"] *,
     body .cl-userButtonPopoverCard .cl-watermark,
     body .cl-userButtonPopoverCard .cl-watermark *,
     body .cl-userButtonPopoverCard .cl-securedByText,
     body .cl-popoverBox a[href*="clerk"],
+    body .cl-popoverBox a[href*="clerk"] *,
     body .cl-popoverBox [class*="development"],
+    body .cl-popoverBox [class*="development"] *,
     body .cl-popoverBox [class*="Development"],
+    body .cl-popoverBox [class*="Development"] *,
     body .cl-popoverBox .cl-watermark,
     body .cl-popoverBox .cl-watermark *,
     body .cl-popoverBox .cl-securedByText {
         color: #c8f902 !important;
+        fill: #c8f902 !important;
     }
 
     /* CLOSE MODAL CURSOR FIXES */
