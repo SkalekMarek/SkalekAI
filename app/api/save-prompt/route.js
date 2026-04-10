@@ -22,14 +22,49 @@ export async function POST(req) {
 
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-    const { error } = await supabaseAdmin.from('profiles').upsert(
-      { clerk_id: userId, system_prompt: systemPrompt || null },
-      { onConflict: 'clerk_id' }
-    );
+    // 1. Try to fetch the existing row ID first, or just attempt an UPDATE based on clerk_id.
+    // We avoid upsert because the 'id' column likely has a foreign key to auth.users which 
+    // we aren't using (since we use Clerk).
+    const { data: existing, error: fetchError } = await supabaseAdmin
+      .from('profiles')
+      .select('clerk_id')
+      .eq('clerk_id', userId)
+      .maybeSingle();
 
-    if (error) {
-      console.error('Supabase upsert error details:', error);
-      return NextResponse.json({ error: error.message || 'Database rejection' }, { status: 400 });
+    if (fetchError) {
+      console.error('Error checking existence:', fetchError);
+      return NextResponse.json({ error: fetchError.message }, { status: 400 });
+    }
+
+    if (!existing) {
+      // If the row doesn't exist, we MUST insert. 
+      // But we will hit the profiles_id_fkey error if we don't have an auth.users entry.
+      // We'll try a minimal insert and catch the specific foreign key error if it happens.
+      const { error: insertError } = await supabaseAdmin.from('profiles').insert({
+        clerk_id: userId,
+        system_prompt: systemPrompt || null
+      });
+
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        if (insertError.message.includes('foreign key constraint')) {
+          return NextResponse.json({ 
+            error: 'Database Sync Error: Please go to Supabase SQL Editor and run: ALTER TABLE profiles DROP CONSTRAINT profiles_id_fkey;' 
+          }, { status: 400 });
+        }
+        return NextResponse.json({ error: insertError.message }, { status: 400 });
+      }
+    } else {
+      // Row exists, just update the prompt. This avoids the 'id' constraint entirely.
+      const { error: updateError } = await supabaseAdmin
+        .from('profiles')
+        .update({ system_prompt: systemPrompt || null })
+        .eq('clerk_id', userId);
+
+      if (updateError) {
+        console.error('Update error:', updateError);
+        return NextResponse.json({ error: updateError.message }, { status: 400 });
+      }
     }
 
     return NextResponse.json({ success: true });

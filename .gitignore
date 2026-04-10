@@ -5,5 +5,10 @@
 # Dependencies  
 node_modules/
 
+# Next.js Build
+.next/
+out/
+build/
+
 # Vercel
 .vercel

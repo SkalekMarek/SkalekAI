@@ -3,12 +3,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { Show, SignIn, UserButton, useUser, useAuth } from '@clerk/nextjs';
 import { createClient } from '@supabase/supabase-js';
+import ArtifactPreview from './components/ArtifactPreview';
+import Sidebar from './components/Sidebar';
 
 // Pre-load Highlight JS in a simple way for React
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export default function ChatApp() {
+  const { user } = useUser();
+  return <ChatContent key={user?.id || 'visitor'} />;
+}
+
+function ChatContent() {
   const { user } = useUser();
   const { getToken } = useAuth();
   
@@ -20,9 +27,14 @@ export default function ChatApp() {
   const [isSpinning, setIsSpinning] = useState(false);
   
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [historySidebarOpen, setHistorySidebarOpen] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState(null);
+  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
+
   const [systemPrompt, setSystemPrompt] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState('Save Prompt');
+  const [currentArtifact, setCurrentArtifact] = useState(null);
   
   const mainRef = useRef(null);
   const centerInputRef = useRef(null);
@@ -51,6 +63,13 @@ export default function ChatApp() {
       link.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
       document.head.appendChild(link);
     }
+
+    if (!document.getElementById('html2pdf-script')) {
+      const script = document.createElement('script');
+      script.id = 'html2pdf-script';
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      document.head.appendChild(script);
+    }
     
     // Auto-focus on load
     if (centerInputRef.current && !active) {
@@ -59,12 +78,14 @@ export default function ChatApp() {
   }, [active]);
 
   useEffect(() => {
-    if (user && !supabaseClient.current) {
-      supabaseClient.current = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (user) {
+      if (!supabaseClient.current) {
+        supabaseClient.current = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
       fetchPrompt();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user?.id]); // Nuclear option handled by the 'key' on #root div anyway
 
   const scrollToBottom = () => {
     if (mainRef.current) {
@@ -84,7 +105,9 @@ export default function ChatApp() {
         .select('system_prompt')
         .eq('clerk_id', user.id)
         .maybeSingle();
-      if (data?.system_prompt) setSystemPrompt(data.system_prompt);
+      
+      // Explicitly set to '' if no prompt exists, otherwise it keeps the old one!
+      setSystemPrompt(data?.system_prompt || '');
     } catch (e) {
       console.warn('Could not fetch custom prompt initially', e);
     }
@@ -120,6 +143,30 @@ export default function ChatApp() {
     }
   };
 
+  const loadChatMessages = async (chatId) => {
+    if (!chatId) {
+      setMessages([]);
+      setCurrentChatId(null);
+      setActive(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setCurrentChatId(chatId);
+    try {
+      const res = await fetch(`/api/history/messages?chatId=${chatId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setMessages(data);
+      setActive(true);
+    } catch (err) {
+      console.error('Failed to load chat:', err);
+      alert('Could not load chat history');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSend = async (source, overrideText = null) => {
     const text = overrideText || inputText.trim();
     if (!text || isLoading) return;
@@ -146,14 +193,30 @@ export default function ChatApp() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: newMessages,
-          sessionToken
+          sessionToken,
+          chatId: currentChatId
         })
       });
       
       const data = await response.json();
       
       if (data.choices) {
-        setMessages([...newMessages, { role: 'assistant', content: data.choices[0].message.content }]);
+        const aiMessage = data.choices[0].message.content;
+        setMessages([...newMessages, { role: 'assistant', content: aiMessage }]);
+        
+        // If this was a new chat, update the ID and trigger history refresh
+        if (!currentChatId && data.chatId) {
+          setCurrentChatId(data.chatId);
+          setHistoryRefreshTrigger(prev => prev + 1);
+        }
+
+        // AUTO-OPEN LOGIC: If the message contains a full code block, auto-preview it
+        if (/```(html|js|javascript|svg|xml)/i.test(aiMessage) && !currentArtifact) {
+          setTimeout(() => {
+            const defaultLang = aiMessage.includes('```html') ? 'html' : 'javascript';
+            handlePreview(aiMessage, defaultLang);
+          }, 800);
+        }
       } else {
         setMessages([...newMessages, { role: 'assistant', content: "Error: " + (data.error || "Problem") }]);
       }
@@ -171,11 +234,62 @@ export default function ChatApp() {
     setIsSpinning(true);
     setTimeout(() => setIsSpinning(false), 500);
     setMessages([]);
+    setCurrentChatId(null);
     setActive(false);
     setInputText('');
     setTimeout(() => {
       if (centerInputRef.current) centerInputRef.current.focus();
     }, 100);
+  };
+
+  const exportToPDF = () => {
+    if (messages.length === 0) return;
+    
+    const element = document.createElement('div');
+    element.className = 'pdf-export-container';
+    
+    const header = `
+      <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #c8f902; padding-bottom: 20px;">
+        <h1 style="color: #000; margin: 0; font-family: sans-serif;">Skalek AI</h1>
+        <p style="color: #666; margin: 5px 0;">Conversation Export - ${new Date().toLocaleDateString()}</p>
+      </div>
+    `;
+    
+    let content = header;
+    messages.forEach(msg => {
+      const roleName = msg.role === 'user' ? 'You' : 'Skalek AI';
+      const roleColor = msg.role === 'user' ? '#f4f4f4' : '#ffffff';
+      const borderColor = msg.role === 'user' ? '#ddd' : '#c8f902';
+      
+      content += `
+        <div style="margin-bottom: 20px; padding: 15px; background: ${roleColor}; border-left: 4px solid ${borderColor}; border-radius: 4px;">
+          <strong style="display: block; margin-bottom: 8px; color: #111; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">${roleName}</strong>
+          <div style="color: #333; line-height: 1.6; font-family: sans-serif; white-space: pre-wrap;">${msg.content.replace(/```[\s\S]*?```/g, (match) => {
+            return `<pre style="background: #2d2d2d; color: #ccc; padding: 10px; border-radius: 4px; overflow: hidden; font-size: 13px;">${match.replace(/```(\w+)?\n/, '').replace(/```$/, '')}</pre>`;
+          })}</div>
+        </div>
+      `;
+    });
+
+    element.innerHTML = content;
+    document.body.appendChild(element);
+
+    const opt = {
+      margin: 10,
+      filename: `Skalek_AI_Chat_${new Date().toISOString().slice(0, 10)}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    if (window.html2pdf) {
+      window.html2pdf().set(opt).from(element).save().then(() => {
+        document.body.removeChild(element);
+      });
+    } else {
+      console.error('html2pdf library not loaded yet');
+      alert('PDF library is still loading, please try again in a second.');
+    }
   };
 
   const handleKeyDown = (e, source) => {
@@ -199,6 +313,53 @@ export default function ChatApp() {
       return '```\n' + text + '\n```';
     }
     return text;
+  };
+
+  const handlePreview = (messageText, targetLang) => {
+    const codeBlockRe = /```([\w-]*)\n([\s\S]*?)(?:```|$)/g;
+    const blocks = [];
+    let match;
+    while ((match = codeBlockRe.exec(messageText)) !== null) {
+      blocks.push({ lang: (match[1] || 'code').toLowerCase(), code: match[2] });
+    }
+
+    // Combine HTML, CSS, JS
+    let combinedCode = '';
+    const htmlBlock = blocks.find(b => ['html', 'xml'].includes(b.lang));
+    const cssBlocks = blocks.filter(b => b.lang === 'css');
+    const jsBlocks = blocks.filter(b => ['javascript', 'js'].includes(b.lang));
+    const svgBlock = blocks.find(b => b.lang === 'svg');
+
+    if (htmlBlock) {
+      combinedCode = htmlBlock.code;
+      // Inject CSS
+      if (cssBlocks.length > 0) {
+        const styles = cssBlocks.map(b => b.code).join('\n');
+        if (combinedCode.includes('</head>')) {
+          combinedCode = combinedCode.replace('</head>', `<style>${styles}</style></head>`);
+        } else {
+          combinedCode = `<style>${styles}</style>` + combinedCode;
+        }
+      }
+      // Inject JS
+      if (jsBlocks.length > 0) {
+        const scripts = jsBlocks.map(b => b.code).join('\n');
+        if (combinedCode.includes('</body>')) {
+          combinedCode = combinedCode.replace('</body>', `<script>${scripts}</script></body>`);
+        } else {
+          combinedCode = combinedCode + `<script>${scripts}</script>`;
+        }
+      }
+      setCurrentArtifact({ language: 'html', code: combinedCode, title: 'Live Preview' });
+    } else if (svgBlock) {
+      setCurrentArtifact({ language: 'svg', code: svgBlock.code, title: 'SVG Preview' });
+    } else {
+      // Just preview the specific target
+      const target = blocks.find(b => b.lang === targetLang.toLowerCase());
+      if (target) {
+        setCurrentArtifact({ language: target.lang, code: target.code, title: target.lang.toUpperCase() });
+      }
+    }
   };
 
   // Parses markdown fences and renders raw text and code blocks
@@ -233,11 +394,20 @@ export default function ChatApp() {
         }
       }
 
+      const isPreviewable = ['html', 'javascript', 'js', 'svg', 'xml', 'css'].includes(lang.toLowerCase());
+
       elements.push(
         <div key={`code-${match.index}`} className="code-window">
           <div className="code-bar">
             <span className="code-lang">{lang.toUpperCase()}</span>
-            <button className="code-copy-btn" onClick={(e) => {
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {isPreviewable && (
+                <button className="code-preview-btn" onClick={() => handlePreview(text, lang)}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  Preview
+                </button>
+              )}
+              <button className="code-copy-btn" onClick={(e) => {
               navigator.clipboard.writeText(code);
               const btn = e.currentTarget;
               btn.style.color = 'var(--accent)';
@@ -245,6 +415,7 @@ export default function ChatApp() {
             }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 16V4C3 2.89543 3.89543 2 5 2H15M9 22H18C19.1046 22 20 21.1046 20 20V8C20 6.89543 19.1046 6 18 6H9C7.89543 6 7 6.89543 7 8V20C7 21.1046 7.89543 22 9 22Z"/></svg>
             </button>
+            </div>
           </div>
           <pre>
             <code className="hljs" dangerouslySetInnerHTML={{ __html: highlightedHTML }} />
@@ -263,10 +434,20 @@ export default function ChatApp() {
   };
 
   return (
-    <div id="root">
+    <div id="root" className={currentArtifact ? 'artifact-open' : ''}>
+      <Sidebar 
+        isOpen={historySidebarOpen} 
+        onClose={() => setHistorySidebarOpen(false)} 
+        onSelectChat={loadChatMessages}
+        currentChatId={currentChatId}
+        refreshHistoryTrigger={historyRefreshTrigger}
+        onOpenSettings={() => setDrawerOpen(true)}
+      />
       {/* AUTH OVERLAY */}
       <Show when="signed-out">
         <div id="auth-overlay">
+          <div className="glow-orb"></div>
+          <div className="glow-orb secondary"></div>
           <img src="/svg/logo.svg" className="auth-logo" alt="Skalek AI" />
           <h2>Welcome to Skalek AI</h2>
           <p className="auth-sub">Sign in to start chatting</p>
@@ -282,9 +463,9 @@ export default function ChatApp() {
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <UserButton />
               </div>
-              <button className="icon-btn" onClick={() => setDrawerOpen(true)} title="Settings" style={{ position: 'static', transform: 'none', margin: 0 }}>
+              <button className="icon-btn" onClick={() => setHistorySidebarOpen(true)} title="Chat History" style={{ position: 'static', transform: 'none', margin: 0 }}>
                 <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" />
+                  <path d="M13,3c-4.97,0-9,4.03-9,9H1l3.89,3.89l0.07,0.14L9,12H6c0-3.87,3.13-7,7-7s7,3.13,7,7s-3.13,7-7,7c-1.93,0-3.68-0.79-4.94-2.06 l-1.42,1.42C8.27,19.99,10.51,21,13,21c4.97,0,9-4.03,9-9S17.97,3,13,3z M12,8v5l4.28,2.54l0.72-1.21l-3.5-2.08V8H12z"/>
                 </svg>
               </button>
             </div>
@@ -294,6 +475,11 @@ export default function ChatApp() {
 
             {/* Right side actions */}
             <div style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button className="icon-btn" onClick={exportToPDF} title="Export Chat as PDF" style={{ position: 'static', transform: 'none', margin: 0 }}>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20,2H8C6.9,2,6,2.9,6,4v12c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2V4C22,2.9,21.1,2,20,2z M20,16H8V4h12V16z M4,6H2v14 c0,1.1,0.9,2,2,2h14v-2H4V6z M16,12V10h2v-1h-2V8h3V7h-4v6h4v-1H16z M12,7v1h1c0.55,0,1,0.45,1,1v3c0,0.55-0.45,1-1,1h-2V7H12z M12,12 h1v-3h-1V12z M8,7v6h1v-2h2V7H8z M9,10V8h1v2H9z"/>
+                </svg>
+              </button>
               <button className={`icon-btn ${isSpinning ? 'spinning' : ''}`} id="reset-btn" onClick={resetChat} title="Reset chat" style={{ position: 'static', transform: 'none', margin: 0 }}>
                 <svg viewBox="0 0 1920 1920" fill="currentColor">
                   <path d="M960 0v112.941c467.125 0 847.059 379.934 847.059 847.059 0 467.125-379.934 847.059-847.059 847.059-467.125 0-847.059-379.934-847.059-847.059 0-267.106 126.607-515.915 338.824-675.727v393.374h112.94V112.941H0v112.941h342.89C127.058 407.38 0 674.711 0 960c0 529.355 430.645 960 960 960s960-430.645 960-960S1489.355 0 960 0" fillRule="evenodd"/>
@@ -440,6 +626,11 @@ export default function ChatApp() {
           </div>
         </div>
       </Show>
+
+      <ArtifactPreview 
+        artifact={currentArtifact} 
+        onClose={() => setCurrentArtifact(null)} 
+      />
     </div>
   );
 }
