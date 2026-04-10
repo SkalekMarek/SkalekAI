@@ -780,19 +780,25 @@
     /* ====== CLERK FORCE TYPOGRAPHY (v7 Deep Dive) ====== */
     /* Dark Mode Absolute Wildcard */
     body:not(.light-mode) .cl-rootBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
-    body:not(.light-mode) #clerk-components *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *) {
+    body:not(.light-mode) #clerk-components *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
+    body:not(.light-mode) .cl-userButtonPopoverCard *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
+    body:not(.light-mode) .cl-popoverBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *) {
         color: #ffffff !important;
     }
 
     /* Light Mode Absolute Wildcard */
     body.light-mode .cl-rootBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
-    body.light-mode #clerk-components *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *) {
+    body.light-mode #clerk-components *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
+    body.light-mode .cl-userButtonPopoverCard *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
+    body.light-mode .cl-popoverBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *) {
         color: #000000 !important;
     }
     
     /* INPUT FIXES (Dark mode input was glaring white) */
     body:not(.light-mode) .cl-rootBox input,
-    body:not(.light-mode) #clerk-components input {
+    body:not(.light-mode) #clerk-components input,
+    body:not(.light-mode) .cl-userButtonPopoverCard input,
+    body:not(.light-mode) .cl-popoverBox input {
         background-color: #222222 !important;
         color: #ffffff !important;
         border-color: #444444 !important;
@@ -800,14 +806,16 @@
     }
     
     body.light-mode .cl-rootBox input,
-    body.light-mode #clerk-components input {
+    body.light-mode #clerk-components input,
+    body.light-mode .cl-userButtonPopoverCard input,
+    body.light-mode .cl-popoverBox input {
         background-color: #ffffff !important;
         color: #000000 !important;
         border-color: #cccccc !important;
         color-scheme: light !important; 
     }
 
-    /* GREEN EXCEPTIONS (Higher specificity using IDs + Tags) */
+    /* GREEN EXCEPTIONS (Higher specificity using IDs + Tags + Classes) */
     body #clerk-components a[href*="clerk"],
     body #clerk-components [class*="development"],
     body #clerk-components [class*="Development"],
@@ -819,32 +827,56 @@
     body .cl-rootBox [class*="Development"],
     body .cl-rootBox .cl-watermark,
     body .cl-rootBox .cl-watermark *,
-    body .cl-rootBox .cl-securedByText {
+    body .cl-rootBox .cl-securedByText,
+    body .cl-userButtonPopoverCard a[href*="clerk"],
+    body .cl-userButtonPopoverCard [class*="development"],
+    body .cl-userButtonPopoverCard [class*="Development"],
+    body .cl-userButtonPopoverCard .cl-watermark,
+    body .cl-userButtonPopoverCard .cl-watermark *,
+    body .cl-userButtonPopoverCard .cl-securedByText,
+    body .cl-popoverBox a[href*="clerk"],
+    body .cl-popoverBox [class*="development"],
+    body .cl-popoverBox [class*="Development"],
+    body .cl-popoverBox .cl-watermark,
+    body .cl-popoverBox .cl-watermark *,
+    body .cl-popoverBox .cl-securedByText {
         color: #c8f902 !important;
     }
 
     /* CLOSE MODAL CURSOR FIXES */
     body:not(.light-mode) #clerk-components .cl-modalCloseButton,
-    body:not(.light-mode) .cl-rootBox .cl-modalCloseButton {
+    body:not(.light-mode) .cl-rootBox .cl-modalCloseButton,
+    body:not(.light-mode) .cl-userButtonPopoverCard .cl-modalCloseButton,
+    body:not(.light-mode) .cl-popoverBox .cl-modalCloseButton {
         color: #ffffff !important;
         transition: color 0.15s ease !important;
     }
     body:not(.light-mode) #clerk-components .cl-modalCloseButton:hover,
     body:not(.light-mode) #clerk-components .cl-modalCloseButton:hover *,
     body:not(.light-mode) .cl-rootBox .cl-modalCloseButton:hover,
-    body:not(.light-mode) .cl-rootBox .cl-modalCloseButton:hover * {
+    body:not(.light-mode) .cl-rootBox .cl-modalCloseButton:hover *,
+    body:not(.light-mode) .cl-userButtonPopoverCard .cl-modalCloseButton:hover,
+    body:not(.light-mode) .cl-userButtonPopoverCard .cl-modalCloseButton:hover *,
+    body:not(.light-mode) .cl-popoverBox .cl-modalCloseButton:hover,
+    body:not(.light-mode) .cl-popoverBox .cl-modalCloseButton:hover * {
         color: #ff3333 !important;
     }
 
     body.light-mode #clerk-components .cl-modalCloseButton,
-    body.light-mode .cl-rootBox .cl-modalCloseButton {
+    body.light-mode .cl-rootBox .cl-modalCloseButton,
+    body.light-mode .cl-userButtonPopoverCard .cl-modalCloseButton,
+    body.light-mode .cl-popoverBox .cl-modalCloseButton {
         color: #000000 !important;
         transition: color 0.15s ease !important;
     }
     body.light-mode #clerk-components .cl-modalCloseButton:hover,
     body.light-mode #clerk-components .cl-modalCloseButton:hover *,
     body.light-mode .cl-rootBox .cl-modalCloseButton:hover,
-    body.light-mode .cl-rootBox .cl-modalCloseButton:hover * {
+    body.light-mode .cl-rootBox .cl-modalCloseButton:hover *,
+    body.light-mode .cl-userButtonPopoverCard .cl-modalCloseButton:hover,
+    body.light-mode .cl-userButtonPopoverCard .cl-modalCloseButton:hover *,
+    body.light-mode .cl-popoverBox .cl-modalCloseButton:hover,
+    body.light-mode .cl-popoverBox .cl-modalCloseButton:hover * {
         color: #ff3333 !important;
     }
     
@@ -852,6 +884,10 @@
     body:not(.light-mode) #clerk-components button[data-variant="danger"],
     body:not(.light-mode) #clerk-components button[data-variant="danger"] *,
     body:not(.light-mode) .cl-rootBox button[data-variant="danger"],
-    body:not(.light-mode) .cl-rootBox button[data-variant="danger"] * {
+    body:not(.light-mode) .cl-rootBox button[data-variant="danger"] *,
+    body:not(.light-mode) .cl-userButtonPopoverCard button[data-variant="danger"],
+    body:not(.light-mode) .cl-userButtonPopoverCard button[data-variant="danger"] *,
+    body:not(.light-mode) .cl-popoverBox button[data-variant="danger"],
+    body:not(.light-mode) .cl-popoverBox button[data-variant="danger"] * {
         color: #ff3333 !important;
     }
