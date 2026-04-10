@@ -781,6 +781,13 @@
     /* Dark Mode (Default) */
     body:not(.light-mode) .cl-rootBox,
     body:not(.light-mode) .cl-card,
+    body:not(.light-mode) .cl-card h1,
+    body:not(.light-mode) .cl-card h2,
+    body:not(.light-mode) .cl-card h3,
+    body:not(.light-mode) .cl-card h4,
+    body:not(.light-mode) .cl-card p,
+    body:not(.light-mode) .cl-pageHeaderTitle,
+    body:not(.light-mode) .cl-pageHeaderSubtitle,
     body:not(.light-mode) .cl-headerTitle,
     body:not(.light-mode) .cl-headerSubtitle,
     body:not(.light-mode) .cl-profileSectionTitle,
@@ -811,9 +818,26 @@
         color: #ffffff !important;
     }
     
+    /* Modal Close Button Override (Dark Mode) */
+    body:not(.light-mode) .cl-modalCloseButton {
+        color: #ffffff !important;
+        transition: color 0.15s ease !important;
+    }
+    body:not(.light-mode) .cl-modalCloseButton:hover,
+    body:not(.light-mode) .cl-modalCloseButton:hover svg {
+        color: #ff3333 !important;
+    }
+
     /* Light Mode */
     body.light-mode .cl-rootBox,
     body.light-mode .cl-card,
+    body.light-mode .cl-card h1,
+    body.light-mode .cl-card h2,
+    body.light-mode .cl-card h3,
+    body.light-mode .cl-card h4,
+    body.light-mode .cl-card p,
+    body.light-mode .cl-pageHeaderTitle,
+    body.light-mode .cl-pageHeaderSubtitle,
     body.light-mode .cl-headerTitle,
     body.light-mode .cl-headerSubtitle,
     body.light-mode .cl-profileSectionTitle,
@@ -844,10 +868,22 @@
         color: #000000 !important;
     }
 
-    /* Keep Development Mode explicitly green */
-    .cl-rootBox a[href*="clerk"],
+    /* Modal Close Button Override (Light Mode) */
+    body.light-mode .cl-modalCloseButton {
+        color: #000000 !important;
+        transition: color 0.15s ease !important;
+    }
+    body.light-mode .cl-modalCloseButton:hover,
+    body.light-mode .cl-modalCloseButton:hover svg {
+        color: #ff3333 !important;
+    }
+
+    /* Keep Development Mode & Secured by Clerk explicitly green globally */
+    a[href*="clerk"],
     [class*="development"],
     [class*="Development"],
-    .cl-internal-1k8r2n5 {
+    .cl-internal-1k8r2n5,
+    .cl-watermark,
+    .cl-securedByText {
         color: #c8f902 !important;
     }
