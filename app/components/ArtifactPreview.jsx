@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function ArtifactPreview({ artifact, onClose }) {
   const [view, setView] = useState('preview'); // 'preview' or 'code'
@@ -9,7 +9,7 @@ export default function ArtifactPreview({ artifact, onClose }) {
   if (!artifact) return null;
 
   const { language, title, code } = artifact;
-  const [highlightedCode, setHighlightedCode] = useState('');
+  const codeRef = useRef(null);
 
   const escapeHtml = (unsafe) => {
     return unsafe
@@ -22,21 +22,14 @@ export default function ArtifactPreview({ artifact, onClose }) {
 
   useEffect(() => {
     // Apply syntax highlighting to the code view
-    if (view === 'code') {
-      if (typeof window !== 'undefined' && window.hljs) {
-        try {
-          const hlLang = window.hljs.getLanguage(language) ? language : null;
-          if (hlLang) {
-            const result = window.hljs.highlight(code, { language: hlLang, ignoreIllegals: true });
-            setHighlightedCode(result.value);
-          } else {
-            setHighlightedCode(escapeHtml(code));
-          }
-        } catch (e) {
-          setHighlightedCode(escapeHtml(code));
+    if (view === 'code' && typeof window !== 'undefined' && window.hljs && codeRef.current) {
+      try {
+        const hlLang = window.hljs.getLanguage(language) ? language : null;
+        if (hlLang) {
+          window.hljs.highlightElement(codeRef.current);
         }
-      } else {
-        setHighlightedCode(escapeHtml(code));
+      } catch (e) {
+        console.warn('Highlight failed for', language, e);
       }
     }
   }, [view, code, language]);
@@ -157,7 +150,7 @@ export default function ArtifactPreview({ artifact, onClose }) {
           />
         ) : (
           <div className="code-view">
-            <pre><code className="hljs" dangerouslySetInnerHTML={{ __html: highlightedCode }} /></pre>
+            <pre><code ref={codeRef} className={`hljs language-${language}`}>{code}</code></pre>
           </div>
         )}
       </div>

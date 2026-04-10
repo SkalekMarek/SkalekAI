@@ -14,19 +14,6 @@ export default function ChatApp() {
   const { user, isLoaded } = useUser();
 
   useEffect(() => {
-    // HARD REFRESH LOGIC:
-    // If a user signs in, we want to force ONE full page refresh to ensure
-    // all cached contexts, singletons, and local states are wiped clean.
-    if (isLoaded && user?.id) {
-      const refreshKey = `skalek_refreshed_${user.id}`;
-      const hasRefreshed = sessionStorage.getItem(refreshKey);
-
-      if (!hasRefreshed) {
-        sessionStorage.setItem(refreshKey, 'true');
-        window.location.reload();
-      }
-    }
-    
     // Clear flags for other users when signing out
     if (isLoaded && !user) {
       // Find all skalek refresh keys and remove them so they can refresh again on next login
@@ -517,29 +504,24 @@ function ChatContent() {
 
 // SAFE CODE COMPONENT: Isolates highlighting to prevent main page crashes
 function SafeCodeBlock({ lang, code, rawText, handlePreview }) {
-  const [highlighted, setHighlighted] = useState('');
+  const codeRef = useRef(null);
   
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.hljs) {
+    if (typeof window !== 'undefined' && window.hljs && codeRef.current) {
       try {
         const hlLang = window.hljs.getLanguage(lang) ? lang : null;
         if (hlLang) {
-          const result = window.hljs.highlight(code, { language: hlLang, ignoreIllegals: true });
-          setHighlighted(result.value);
-        } else {
-          // If language is unknown, don't use highlightAuto (it's slow). 
-          // Just manually escape if necessary or use plain code.
-          setHighlighted(escapeHtml(code));
+          // Use highlightElement for maximum stability and to avoid dangerouslySetInnerHTML crashes
+          window.hljs.highlightElement(codeRef.current);
         }
       } catch (e) {
-        setHighlighted(escapeHtml(code));
+        console.warn('Highlight failed for', lang, e);
       }
-    } else {
-      setHighlighted(escapeHtml(code));
     }
   }, [lang, code]);
 
   function escapeHtml(unsafe) {
+    if (!unsafe) return '';
     return unsafe
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
@@ -572,7 +554,9 @@ function SafeCodeBlock({ lang, code, rawText, handlePreview }) {
         </div>
       </div>
       <pre>
-        <code className="hljs" dangerouslySetInnerHTML={{ __html: highlighted || escapeHtml(code) }} />
+        <code ref={codeRef} className={`hljs language-${lang}`}>
+          {code}
+        </code>
       </pre>
     </div>
   );

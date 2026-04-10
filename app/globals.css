@@ -976,9 +976,7 @@
       right: -100%;
       width: calc(50% - 16px);
       height: calc(100vh - 32px);
-      background: rgba(var(--bg-rgb, 10, 10, 10), 0.85);
-      backdrop-filter: blur(25px) saturate(180%);
-      -webkit-backdrop-filter: blur(25px) saturate(180%);
+      background: #111111; /* Solid background prevents GPU crashes */
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 20px 0 0 20px;
       z-index: 500;
@@ -1490,6 +1488,11 @@
     .code-window pre code.hljs {
       white-space: pre-wrap;
       word-break: break-all;
+      background: #1a1b26 !important; /* Forces Tokyo Night background */
+      color: #a9b1d6 !important;     /* Forces default text color */
+      display: block;
+      padding: 1.2rem;
+      border-radius: 0 0 12px 12px;
     }
 
     /* Fix potential overflow in ai-text */
