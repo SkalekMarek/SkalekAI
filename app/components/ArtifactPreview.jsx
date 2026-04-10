@@ -8,18 +8,31 @@ export default function ArtifactPreview({ artifact, onClose }) {
 
   if (!artifact) return null;
 
-  const { language, title, code } = artifact;
-  const [highlightedCode, setHighlightedCode] = useState(code);
+  const [highlightedCode, setHighlightedCode] = useState('');
+
+  const escapeHtml = (unsafe) => {
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
 
   useEffect(() => {
     // Apply syntax highlighting to the code view
-    if (view === 'code' && typeof window !== 'undefined' && window.hljs) {
-      try {
-        const lang = window.hljs.getLanguage(language) ? language : 'javascript';
-        const highlighted = window.hljs.highlight(code, { language: lang, ignoreIllegals: true }).value;
-        setHighlightedCode(highlighted);
-      } catch (e) {
-        setHighlightedCode(code);
+    if (view === 'code') {
+      if (typeof window !== 'undefined' && window.hljs) {
+        try {
+          const lang = window.hljs.getLanguage(language) ? language : 'javascript';
+          const highlighted = window.hljs.highlight(code, { language: lang, ignoreIllegals: true }).value;
+          setHighlightedCode(highlighted);
+        } catch (e) {
+          setHighlightedCode(escapeHtml(code));
+        }
+      } else {
+        // Fallback to manual escaping if highlight.js is not loaded yet
+        setHighlightedCode(escapeHtml(code));
       }
     }
   }, [view, code, language]);
