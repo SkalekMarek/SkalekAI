@@ -780,12 +780,16 @@
     /* ====== CLERK FORCE TYPOGRAPHY ====== */
     /* Dark Mode (Default) - ABSOLUTE FORCE ALL Clerk text to pure white */
     body:not(.light-mode) .cl-rootBox,
-    body:not(.light-mode) .cl-rootBox *:not(.cl-formButtonPrimary):not(.cl-formButtonPrimary *):not([data-variant="danger"]):not([data-variant="danger"] *):not(.cl-badge) {
+    body:not(.light-mode) .cl-rootBox *:not(.cl-formButtonPrimary):not(.cl-formButtonPrimary *):not([data-variant="danger"]):not([data-variant="danger"] *):not(.cl-badge):not(.cl-badge *),
+    body:not(.light-mode) #clerk-components,
+    body:not(.light-mode) #clerk-components *:not(.cl-formButtonPrimary):not(.cl-formButtonPrimary *):not([data-variant="danger"]):not([data-variant="danger"] *):not(.cl-badge):not(.cl-badge *) {
         color: #ffffff !important;
     }
 
     /* Light Mode - ABSOLUTE FORCE ALL Clerk text to pure black */
     body.light-mode .cl-rootBox,
-    body.light-mode .cl-rootBox *:not(.cl-formButtonPrimary):not(.cl-formButtonPrimary *):not([data-variant="danger"]):not([data-variant="danger"] *):not(.cl-badge) {
+    body.light-mode .cl-rootBox *:not(.cl-formButtonPrimary):not(.cl-formButtonPrimary *):not([data-variant="danger"]):not([data-variant="danger"] *):not(.cl-badge):not(.cl-badge *),
+    body.light-mode #clerk-components,
+    body.light-mode #clerk-components *:not(.cl-formButtonPrimary):not(.cl-formButtonPrimary *):not([data-variant="danger"]):not([data-variant="danger"] *):not(.cl-badge):not(.cl-badge *) {
         color: #000000 !important;
     }
