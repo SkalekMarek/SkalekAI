@@ -1,4 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
+import { getSystemPrompt } from '../../../backend/db';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -13,17 +14,32 @@ const DEFAULT_SYSTEM_PROMPT =
 export async function POST(req) {
   try {
     const { messages } = await req.json();
+    const { userId } = await auth();
 
     const apiKey = process.env.GOOGLE_API_KEY;
     const modelId = process.env.GEMINI_MODEL_ID || 'gemini-3.1-flash-lite-preview';
 
     if (!apiKey) {
+      console.error('GOOGLE_API_KEY is missing');
       return NextResponse.json({ error: 'API Key is missing.' }, { status: 500 });
+    }
+
+    // ── Resolve system prompt ──────────────────────────────────────────────
+    let finalSystemPrompt = DEFAULT_SYSTEM_PROMPT;
+    if (userId) {
+      try {
+        const customPrompt = await getSystemPrompt(userId);
+        if (customPrompt && customPrompt.trim() !== '') {
+          finalSystemPrompt += `\n\n### Custom Preferences:\n${customPrompt}`;
+        }
+      } catch (err) {
+        console.warn('Could not fetch custom prompt:', err.message);
+      }
     }
 
     // ── Build message array with system prompt prepended ──────────────────
     const allMessages = [
-      { role: 'system', content: DEFAULT_SYSTEM_PROMPT },
+      { role: 'system', content: finalSystemPrompt },
       ...(messages || []).filter(m => m.role !== 'system')
     ];
 
@@ -43,14 +59,15 @@ export async function POST(req) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('Gemini API Error:', data);
+      console.error('Gemini API Error details:', JSON.stringify(data, null, 2));
       return NextResponse.json({ error: data.error?.message || 'API Error' }, { status: response.status });
     }
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Server Error:', error);
+    console.error('Server Internal Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
 

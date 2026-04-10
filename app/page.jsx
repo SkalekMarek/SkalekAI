@@ -53,11 +53,16 @@ function ChatContent() {
   const [isLightMode, setIsLightMode] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [systemPrompt, setSystemPrompt] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('Save Prompt');
   const [currentArtifact, setCurrentArtifact] = useState(null);
   
   const mainRef = useRef(null);
   const centerInputRef = useRef(null);
   const bottomInputRef = useRef(null);
+  const supabaseClient = useRef(null);
 
   useEffect(() => {
     // Add light-mode class to body manually to preserve all old CSS behaviors exactly
@@ -87,6 +92,69 @@ function ChatContent() {
       centerInputRef.current.focus();
     }
   }, [active]);
+
+  useEffect(() => {
+    if (user) {
+      if (!supabaseClient.current) {
+        supabaseClient.current = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+      fetchPrompt();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  const scrollToBottom = () => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = mainRef.current.scrollHeight;
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
+
+  const fetchPrompt = async () => {
+    if (!supabaseClient.current || !user) return;
+    try {
+      const { data } = await supabaseClient.current
+        .from('profiles')
+        .select('system_prompt')
+        .eq('clerk_id', user.id)
+        .maybeSingle();
+      
+      setSystemPrompt(data?.system_prompt || '');
+    } catch (e) {
+      console.warn('Could not fetch custom prompt initially', e);
+    }
+  };
+
+  const saveSystemPrompt = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    setSaveStatus('Saving…');
+    try {
+      const res = await fetch('/api/save-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ systemPrompt })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || 'Network error');
+      
+      setSaveStatus('Saved ✓');
+      setTimeout(() => setSaveStatus('Save Prompt'), 2000);
+    } catch (e) {
+      console.error('Save failed:', e);
+      setSaveStatus(`Error: ${e.message}`);
+      setTimeout(() => setSaveStatus('Save Prompt'), 4000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
 
   const handleSend = async (source, overrideText = null) => {
@@ -327,6 +395,11 @@ function ChatContent() {
 
             {/* Right side actions */}
             <div style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button className="icon-btn" onClick={() => setDrawerOpen(true)} title="Settings" style={{ position: 'static', transform: 'none', margin: 0 }}>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.81,11.69,4.81,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.5c-1.93,0-3.5-1.57-3.5-3.5 s1.57-3.5,3.5-3.5s3.5,1.57,3.5,3.5S13.93,15.5,12,15.5z"/>
+                </svg>
+              </button>
               <button className={`icon-btn ${isSpinning ? 'spinning' : ''}`} id="reset-btn" onClick={resetChat} title="Reset chat" style={{ position: 'static', transform: 'none', margin: 0 }}>
                 <svg viewBox="0 0 1920 1920" fill="currentColor">
                   <path d="M960 0v112.941c467.125 0 847.059 379.934 847.059 847.059 0 467.125-379.934 847.059-847.059 847.059-467.125 0-847.059-379.934-847.059-847.059 0-267.106 126.607-515.915 338.824-675.727v393.374h112.94V112.941H0v112.941h342.89C127.058 407.38 0 674.711 0 960c0 529.355 430.645 960 960 960s960-430.645 960-960S1489.355 0 960 0" fillRule="evenodd"/>
@@ -445,7 +518,33 @@ function ChatContent() {
             </div>
           </div>
         )}
-
+        
+        {/* SETTINGS DRAWER */}
+        <div id="drawer-backdrop" className={drawerOpen ? 'open' : ''} onClick={() => setDrawerOpen(false)}></div>
+        <div id="settings-drawer" className={drawerOpen ? 'open' : ''}>
+          <div className="drawer-header">
+            <h3>Settings</h3>
+            <button className="icon-btn" onClick={() => setDrawerOpen(false)} title="Close">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+              </svg>
+            </button>
+          </div>
+          
+          <div className="drawer-section grow">
+            <label className="drawer-label">System Prompt</label>
+            <p className="drawer-hint">Customize how Skalek AI behaves. Saved to your profile.</p>
+            <textarea 
+              className="drawer-textarea" 
+              placeholder="You are Skalek AI..." 
+              value={systemPrompt}
+              onChange={(e) => setSystemPrompt(e.target.value)}
+            />
+            <button className="drawer-btn primary" onClick={saveSystemPrompt} disabled={isSaving}>
+              {saveStatus}
+            </button>
+          </div>
+        </div>
       </Show>
 
       <ArtifactPreview 
