@@ -23,7 +23,19 @@ export function ClerkClientProvider({ children }) {
   }, []);
 
   return (
-    <ClerkProvider appearance={{ baseTheme: isDarkMode ? dark : undefined }}>
+    <ClerkProvider 
+      appearance={{ 
+        baseTheme: isDarkMode ? dark : undefined,
+        variables: {
+          colorPrimary: '#c8f902',
+          colorTextOnPrimaryBackground: '#000000',
+          colorBackground: isDarkMode ? '#1a1a1a' : '#eeeeee',
+          colorInputBackground: isDarkMode ? '#111111' : '#f7f7f7',
+          colorInputText: isDarkMode ? '#e8e8e8' : '#1a1a1a',
+          colorText: isDarkMode ? '#e8e8e8' : '#1a1a1a',
+        }
+      }}
+    >
       {children}
     </ClerkProvider>
   );
