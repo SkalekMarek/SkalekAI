@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Show, SignIn, UserButton, useUser, useAuth } from '@clerk/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import ArtifactPreview from './components/ArtifactPreview';
+import Script from 'next/script';
 
 // Pre-load Highlight JS in a simple way for React
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -48,10 +49,11 @@ function ChatContent() {
   
   const [messages, setMessages] = useState([]);
   const [active, setActive] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [isLightMode, setIsLightMode] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
   
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState('');
@@ -65,6 +67,7 @@ function ChatContent() {
   const supabaseClient = useRef(null);
 
   useEffect(() => {
+    setHasMounted(true);
     // Add light-mode class to body manually to preserve all old CSS behaviors exactly
     if (isLightMode) {
       document.body.classList.add('light-mode');
@@ -313,7 +316,8 @@ function ChatContent() {
       
       // Attempt HLJS processing if available
       let highlightedHTML = code;
-      if (typeof window !== 'undefined' && window.hljs) {
+      // ONLY apply highlighting if mounted and hljs is available to prevent hydration mismatch
+      if (hasMounted && typeof window !== 'undefined' && window.hljs) {
         try {
           const hlLang = window.hljs.getLanguage(lang) ? lang : null;
           if (hlLang) {
@@ -550,6 +554,15 @@ function ChatContent() {
       <ArtifactPreview 
         artifact={currentArtifact} 
         onClose={() => setCurrentArtifact(null)} 
+      />
+
+      <Script 
+        src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" 
+        strategy="afterInteractive"
+        onLoad={() => {
+          // Force a small rerender to apply highlighting
+          setMessages(prev => [...prev]);
+        }}
       />
     </div>
   );

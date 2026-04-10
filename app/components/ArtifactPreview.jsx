@@ -8,6 +8,7 @@ export default function ArtifactPreview({ artifact, onClose }) {
 
   if (!artifact) return null;
 
+  const { language, title, code } = artifact;
   const [highlightedCode, setHighlightedCode] = useState('');
 
   const escapeHtml = (unsafe) => {
