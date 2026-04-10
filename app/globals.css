@@ -776,3 +776,50 @@
     /* light mode drawer overrides */
     body.light-mode #settings-drawer { background: #f0f0f0; }
     body.light-mode .drawer-textarea { background: #fff; }
+
+    /* ====== CLERK FORCE TYPOGRAPHY ====== */
+    /* Dark Mode (Default) - ALL Clerk text forced to pure white */
+    body:not(.light-mode) .cl-rootBox,
+    body:not(.light-mode) .cl-card,
+    body:not(.light-mode) .cl-headerTitle,
+    body:not(.light-mode) .cl-headerSubtitle,
+    body:not(.light-mode) .cl-profileSectionTitle,
+    body:not(.light-mode) .cl-profileSectionTitleText,
+    body:not(.light-mode) .cl-navbarButton,
+    body:not(.light-mode) .cl-userPreviewMainIdentifier,
+    body:not(.light-mode) .cl-userPreviewSecondaryIdentifier,
+    body:not(.light-mode) .cl-userButtonPopoverActionButtonText,
+    body:not(.light-mode) .cl-userButtonPopoverActionButton,
+    body:not(.light-mode) .cl-formFieldLabel,
+    body:not(.light-mode) .cl-dividerText,
+    body:not(.light-mode) .cl-footerActionText,
+    body:not(.light-mode) .cl-breadcrumbsItem,
+    body:not(.light-mode) .cl-badge,
+    body:not(.light-mode) .cl-accordionTriggerButton,
+    body:not(.light-mode) .cl-actionCardTitle,
+    body:not(.light-mode) .cl-actionCardDesc {
+        color: #ffffff !important;
+    }
+
+    /* Light Mode - ALL Clerk text forced to pure black */
+    body.light-mode .cl-rootBox,
+    body.light-mode .cl-card,
+    body.light-mode .cl-headerTitle,
+    body.light-mode .cl-headerSubtitle,
+    body.light-mode .cl-profileSectionTitle,
+    body.light-mode .cl-profileSectionTitleText,
+    body.light-mode .cl-navbarButton,
+    body.light-mode .cl-userPreviewMainIdentifier,
+    body.light-mode .cl-userPreviewSecondaryIdentifier,
+    body.light-mode .cl-userButtonPopoverActionButtonText,
+    body.light-mode .cl-userButtonPopoverActionButton,
+    body.light-mode .cl-formFieldLabel,
+    body.light-mode .cl-dividerText,
+    body.light-mode .cl-footerActionText,
+    body.light-mode .cl-breadcrumbsItem,
+    body.light-mode .cl-badge,
+    body.light-mode .cl-accordionTriggerButton,
+    body.light-mode .cl-actionCardTitle,
+    body.light-mode .cl-actionCardDesc {
+        color: #000000 !important;
+    }
