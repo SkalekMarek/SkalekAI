@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Show, SignIn, UserButton, useUser, useAuth } from '@clerk/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import ArtifactPreview from './components/ArtifactPreview';
-import ArtifactPreview from './components/ArtifactPreview';
 
 // Pre-load Highlight JS in a simple way for React
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
