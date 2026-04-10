@@ -16,27 +16,29 @@ export async function POST(req) {
     }
 
     // ── Resolve system prompt ──────────────────────────────────────────────
-    let systemPrompt = '';
+    // 1. Establish the unbreakable core identity and syntax rules
+    const coreSystemPrompt = `You are Skalek AI, an advanced and intelligent programming assistant.
+When generating code snippets, you MUST ALWAYS wrap them in standard markdown code fences and include the correct language identifier (e.g. \`\`\`javascript or \`\`\`python). Be helpful, precise, and concise.`;
 
-    // Verify Clerk Auth natively
+    let finalSystemPrompt = coreSystemPrompt;
+
+    // 2. Fetch User's Custom Additions (if authenticated)
     const { userId } = await auth();
-
     if (userId) {
       try {
         const customPrompt = await getSystemPrompt(userId);
-        if (customPrompt) {
-          systemPrompt = customPrompt;
+        if (customPrompt && customPrompt.trim() !== '') {
+          // Append the user's custom instructions to the core
+          finalSystemPrompt += `\n\n### User's Custom Preferences:\n${customPrompt}`;
         }
       } catch (err) {
-        console.warn('Supabase fetch failed, using default prompt:', err.message);
+        console.warn('Supabase fetch failed, proceeding with base prompt:', err.message);
       }
     }
 
     // ── Build message array with system prompt prepended ──────────────────
     const allMessages = (messages || []).filter(m => m.role !== 'system');
-    if (systemPrompt) {
-      allMessages.unshift({ role: 'system', content: systemPrompt });
-    }
+    allMessages.unshift({ role: 'system', content: finalSystemPrompt });
 
     // ── Call Gemini via OpenAI-compatible endpoint ─────────────────────────
     const response = await fetch(

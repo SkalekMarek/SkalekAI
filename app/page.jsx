@@ -91,15 +91,20 @@ export default function ChatApp() {
   };
 
   const saveSystemPrompt = async () => {
-    if (!supabaseClient.current || !user) return;
+    if (!user) return;
     setIsSaving(true);
     setSaveStatus('Saving…');
     try {
-      const { error } = await supabaseClient.current.from('profiles').upsert(
-        { clerk_id: user.id, system_prompt: systemPrompt || null },
-        { onConflict: 'clerk_id' }
-      );
-      if (error) throw error;
+      const res = await fetch('/api/save-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ systemPrompt })
+      });
+      
+      if (!res.ok) throw new Error('Network error');
+      
       setSaveStatus('Saved ✓');
       setTimeout(() => setSaveStatus('Save Prompt'), 2000);
     } catch (e) {
