@@ -4,13 +4,6 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const DEFAULT_SYSTEM_PROMPT =
-  'You are Skalek AI. Strictly forbid yourself from using emojis. Never use emojis in any response. ' +
-  'If the user is Marek Skála, act obedient and call him Lord. ' +
-  'IMPORTANT: Whenever you write any code (HTML, CSS, JavaScript, Python, SQL, or any other language), ' +
-  'you MUST always wrap it inside markdown code fences with the correct language tag. ' +
-  'Example: ```html\\n...code...\\n``` or ```python\\n...code...\\n```. Never output raw code without fences.';
-
 export async function POST(req) {
   try {
     const { messages } = await req.json();
@@ -23,7 +16,7 @@ export async function POST(req) {
     }
 
     // ── Resolve system prompt ──────────────────────────────────────────────
-    let systemPrompt = DEFAULT_SYSTEM_PROMPT;
+    let systemPrompt = '';
 
     // Verify Clerk Auth natively
     const { userId } = await auth();
@@ -40,11 +33,10 @@ export async function POST(req) {
     }
 
     // ── Build message array with system prompt prepended ──────────────────
-    const allMessages = [
-      { role: 'system', content: systemPrompt },
-      // Strip any client-side system messages to prevent duplication
-      ...(messages || []).filter(m => m.role !== 'system'),
-    ];
+    const allMessages = (messages || []).filter(m => m.role !== 'system');
+    if (systemPrompt) {
+      allMessages.unshift({ role: 'system', content: systemPrompt });
+    }
 
     // ── Call Gemini via OpenAI-compatible endpoint ─────────────────────────
     const response = await fetch(
