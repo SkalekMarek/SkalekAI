@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Show, SignIn, UserButton, useUser, useAuth } from '@clerk/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import ArtifactPreview from './components/ArtifactPreview';
-import Sidebar from './components/Sidebar';
+import ArtifactPreview from './components/ArtifactPreview';
 
 // Pre-load Highlight JS in a simple way for React
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -54,20 +54,11 @@ function ChatContent() {
   const [isLightMode, setIsLightMode] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [historySidebarOpen, setHistorySidebarOpen] = useState(false);
-  const [currentChatId, setCurrentChatId] = useState(null);
-  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
-
-  const [systemPrompt, setSystemPrompt] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState('Save Prompt');
   const [currentArtifact, setCurrentArtifact] = useState(null);
   
   const mainRef = useRef(null);
   const centerInputRef = useRef(null);
   const bottomInputRef = useRef(null);
-  const supabaseClient = useRef(null);
 
   useEffect(() => {
     // Add light-mode class to body manually to preserve all old CSS behaviors exactly
@@ -91,13 +82,6 @@ function ChatContent() {
       link.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
       document.head.appendChild(link);
     }
-
-    if (!document.getElementById('html2pdf-script')) {
-      const script = document.createElement('script');
-      script.id = 'html2pdf-script';
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-      document.head.appendChild(script);
-    }
     
     // Auto-focus on load
     if (centerInputRef.current && !active) {
@@ -105,95 +89,6 @@ function ChatContent() {
     }
   }, [active]);
 
-  useEffect(() => {
-    if (user) {
-      if (!supabaseClient.current) {
-        supabaseClient.current = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      }
-      fetchPrompt();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Nuclear option handled by the 'key' on #root div anyway
-
-  const scrollToBottom = () => {
-    if (mainRef.current) {
-      mainRef.current.scrollTop = mainRef.current.scrollHeight;
-    }
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading]);
-
-  const fetchPrompt = async () => {
-    if (!supabaseClient.current || !user) return;
-    try {
-      const { data } = await supabaseClient.current
-        .from('profiles')
-        .select('system_prompt')
-        .eq('clerk_id', user.id)
-        .maybeSingle();
-      
-      // Explicitly set to '' if no prompt exists, otherwise it keeps the old one!
-      setSystemPrompt(data?.system_prompt || '');
-    } catch (e) {
-      console.warn('Could not fetch custom prompt initially', e);
-    }
-  };
-
-  const saveSystemPrompt = async () => {
-    if (!user) return;
-    setIsSaving(true);
-    setSaveStatus('Saving…');
-    try {
-      const res = await fetch('/api/save-prompt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ systemPrompt })
-      });
-      
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Network error');
-      }
-      
-      setSaveStatus('Saved ✓');
-      setTimeout(() => setSaveStatus('Save Prompt'), 2000);
-    } catch (e) {
-      console.error('Save failed:', e);
-      setSaveStatus(`Error: ${e.message}`);
-      setTimeout(() => setSaveStatus('Save Prompt'), 4000);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const loadChatMessages = async (chatId) => {
-    if (!chatId) {
-      setMessages([]);
-      setCurrentChatId(null);
-      setActive(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setCurrentChatId(chatId);
-    try {
-      const res = await fetch(`/api/history/messages?chatId=${chatId}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setMessages(data);
-      setActive(true);
-    } catch (err) {
-      console.error('Failed to load chat:', err);
-      alert('Could not load chat history');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSend = async (source, overrideText = null) => {
     const text = overrideText || inputText.trim();
@@ -221,8 +116,7 @@ function ChatContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: newMessages,
-          sessionToken,
-          chatId: currentChatId
+          sessionToken
         })
       });
       
@@ -231,12 +125,6 @@ function ChatContent() {
       if (data.choices) {
         const aiMessage = data.choices[0].message.content;
         setMessages([...newMessages, { role: 'assistant', content: aiMessage }]);
-        
-        // If this was a new chat, update the ID and trigger history refresh
-        if (!currentChatId && data.chatId) {
-          setCurrentChatId(data.chatId);
-          setHistoryRefreshTrigger(prev => prev + 1);
-        }
 
         // AUTO-OPEN LOGIC: If the message contains a full code block, auto-preview it
         if (/```(html|js|javascript|svg|xml)/i.test(aiMessage) && !currentArtifact) {
@@ -262,7 +150,6 @@ function ChatContent() {
     setIsSpinning(true);
     setTimeout(() => setIsSpinning(false), 500);
     setMessages([]);
-    setCurrentChatId(null);
     setActive(false);
     setInputText('');
     setTimeout(() => {
@@ -270,55 +157,6 @@ function ChatContent() {
     }, 100);
   };
 
-  const exportToPDF = () => {
-    if (messages.length === 0) return;
-    
-    const element = document.createElement('div');
-    element.className = 'pdf-export-container';
-    
-    const header = `
-      <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #c8f902; padding-bottom: 20px;">
-        <h1 style="color: #000; margin: 0; font-family: sans-serif;">Skalek AI</h1>
-        <p style="color: #666; margin: 5px 0;">Conversation Export - ${new Date().toLocaleDateString()}</p>
-      </div>
-    `;
-    
-    let content = header;
-    messages.forEach(msg => {
-      const roleName = msg.role === 'user' ? 'You' : 'Skalek AI';
-      const roleColor = msg.role === 'user' ? '#f4f4f4' : '#ffffff';
-      const borderColor = msg.role === 'user' ? '#ddd' : '#c8f902';
-      
-      content += `
-        <div style="margin-bottom: 20px; padding: 15px; background: ${roleColor}; border-left: 4px solid ${borderColor}; border-radius: 4px;">
-          <strong style="display: block; margin-bottom: 8px; color: #111; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">${roleName}</strong>
-          <div style="color: #333; line-height: 1.6; font-family: sans-serif; white-space: pre-wrap;">${msg.content.replace(/```[\s\S]*?```/g, (match) => {
-            return `<pre style="background: #2d2d2d; color: #ccc; padding: 10px; border-radius: 4px; overflow: hidden; font-size: 13px;">${match.replace(/```(\w+)?\n/, '').replace(/```$/, '')}</pre>`;
-          })}</div>
-        </div>
-      `;
-    });
-
-    element.innerHTML = content;
-    document.body.appendChild(element);
-
-    const opt = {
-      margin: 10,
-      filename: `Skalek_AI_Chat_${new Date().toISOString().slice(0, 10)}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    if (window.html2pdf) {
-      window.html2pdf().set(opt).from(element).save().then(() => {
-        document.body.removeChild(element);
-      });
-    } else {
-      console.error('html2pdf library not loaded yet');
-      alert('PDF library is still loading, please try again in a second.');
-    }
-  };
 
   const handleKeyDown = (e, source) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -463,14 +301,6 @@ function ChatContent() {
 
   return (
     <div id="root" className={currentArtifact ? 'artifact-open' : ''}>
-      <Sidebar 
-        isOpen={historySidebarOpen} 
-        onClose={() => setHistorySidebarOpen(false)} 
-        onSelectChat={loadChatMessages}
-        currentChatId={currentChatId}
-        refreshHistoryTrigger={historyRefreshTrigger}
-        onOpenSettings={() => setDrawerOpen(true)}
-      />
       {/* AUTH OVERLAY */}
       <Show when="signed-out">
         <div id="auth-overlay">
@@ -491,11 +321,6 @@ function ChatContent() {
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <UserButton />
               </div>
-              <button className="icon-btn" onClick={() => setHistorySidebarOpen(true)} title="Chat History" style={{ position: 'static', transform: 'none', margin: 0 }}>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M13,3c-4.97,0-9,4.03-9,9H1l3.89,3.89l0.07,0.14L9,12H6c0-3.87,3.13-7,7-7s7,3.13,7,7s-3.13,7-7,7c-1.93,0-3.68-0.79-4.94-2.06 l-1.42,1.42C8.27,19.99,10.51,21,13,21c4.97,0,9-4.03,9-9S17.97,3,13,3z M12,8v5l4.28,2.54l0.72-1.21l-3.5-2.08V8H12z"/>
-                </svg>
-              </button>
             </div>
 
             <img src="/svg/logo.svg" alt="Skalek AI" className="logo-img" />
@@ -503,11 +328,6 @@ function ChatContent() {
 
             {/* Right side actions */}
             <div style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <button className="icon-btn" onClick={exportToPDF} title="Export Chat as PDF" style={{ position: 'static', transform: 'none', margin: 0 }}>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20,2H8C6.9,2,6,2.9,6,4v12c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2V4C22,2.9,21.1,2,20,2z M20,16H8V4h12V16z M4,6H2v14 c0,1.1,0.9,2,2,2h14v-2H4V6z M16,12V10h2v-1h-2V8h3V7h-4v6h4v-1H16z M12,7v1h1c0.55,0,1,0.45,1,1v3c0,0.55-0.45,1-1,1h-2V7H12z M12,12 h1v-3h-1V12z M8,7v6h1v-2h2V7H8z M9,10V8h1v2H9z"/>
-                </svg>
-              </button>
               <button className={`icon-btn ${isSpinning ? 'spinning' : ''}`} id="reset-btn" onClick={resetChat} title="Reset chat" style={{ position: 'static', transform: 'none', margin: 0 }}>
                 <svg viewBox="0 0 1920 1920" fill="currentColor">
                   <path d="M960 0v112.941c467.125 0 847.059 379.934 847.059 847.059 0 467.125-379.934 847.059-847.059 847.059-467.125 0-847.059-379.934-847.059-847.059 0-267.106 126.607-515.915 338.824-675.727v393.374h112.94V112.941H0v112.941h342.89C127.058 407.38 0 674.711 0 960c0 529.355 430.645 960 960 960s960-430.645 960-960S1489.355 0 960 0" fillRule="evenodd"/>
@@ -627,32 +447,6 @@ function ChatContent() {
           </div>
         )}
 
-        {/* SETTINGS DRAWER */}
-        <div id="drawer-backdrop" className={drawerOpen ? 'open' : ''} onClick={() => setDrawerOpen(false)}></div>
-        <div id="settings-drawer" className={drawerOpen ? 'open' : ''}>
-          <div className="drawer-header">
-            <h3>Settings</h3>
-            <button className="icon-btn" onClick={() => setDrawerOpen(false)} title="Close">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-              </svg>
-            </button>
-          </div>
-          
-          <div className="drawer-section grow">
-            <label className="drawer-label">System Prompt</label>
-            <p className="drawer-hint">Customize how Skalek AI behaves. Saved to your profile.</p>
-            <textarea 
-              className="drawer-textarea" 
-              placeholder="You are Skalek AI..." 
-              value={systemPrompt}
-              onChange={(e) => setSystemPrompt(e.target.value)}
-            />
-            <button className="drawer-btn primary" onClick={saveSystemPrompt} disabled={isSaving}>
-              {saveStatus}
-            </button>
-          </div>
-        </div>
       </Show>
 
       <ArtifactPreview 
