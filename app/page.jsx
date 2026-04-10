@@ -11,7 +11,35 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export default function ChatApp() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
+
+  useEffect(() => {
+    // HARD REFRESH LOGIC:
+    // If a user signs in, we want to force ONE full page refresh to ensure
+    // all cached contexts, singletons, and local states are wiped clean.
+    if (isLoaded && user?.id) {
+      const refreshKey = `skalek_refreshed_${user.id}`;
+      const hasRefreshed = sessionStorage.getItem(refreshKey);
+
+      if (!hasRefreshed) {
+        sessionStorage.setItem(refreshKey, 'true');
+        window.location.reload();
+      }
+    }
+    
+    // Clear flags for other users when signing out
+    if (isLoaded && !user) {
+      // Find all skalek refresh keys and remove them so they can refresh again on next login
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('skalek_refreshed_')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    }
+  }, [user?.id, isLoaded]);
+
+  if (!isLoaded) return null;
+
   return <ChatContent key={user?.id || 'visitor'} />;
 }
 
