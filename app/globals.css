@@ -779,18 +779,18 @@
 
     /* ====== CLERK FORCE TYPOGRAPHY (v7 Deep Dive) ====== */
     /* Dark Mode Absolute Wildcard */
-    body:not(.light-mode) .cl-rootBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
-    body:not(.light-mode) #clerk-components *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
-    body:not(.light-mode) .cl-userButtonPopoverCard *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
-    body:not(.light-mode) .cl-popoverBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *) {
+    body:not(.light-mode) .cl-rootBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *):not(.cl-watermark):not(.cl-watermark *):not([class*="development"]):not([class*="Development"]):not(.cl-internal-1k8r2n5):not(.cl-securedByText),
+    body:not(.light-mode) #clerk-components *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *):not(.cl-watermark):not(.cl-watermark *):not([class*="development"]):not([class*="Development"]):not(.cl-internal-1k8r2n5):not(.cl-securedByText),
+    body:not(.light-mode) .cl-userButtonPopoverCard *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *):not(.cl-watermark):not(.cl-watermark *):not([class*="development"]):not([class*="Development"]):not(.cl-internal-1k8r2n5):not(.cl-securedByText),
+    body:not(.light-mode) .cl-popoverBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *):not(.cl-watermark):not(.cl-watermark *):not([class*="development"]):not([class*="Development"]):not(.cl-internal-1k8r2n5):not(.cl-securedByText) {
         color: #ffffff !important;
     }
 
     /* Light Mode Absolute Wildcard */
-    body.light-mode .cl-rootBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
-    body.light-mode #clerk-components *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
-    body.light-mode .cl-userButtonPopoverCard *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
-    body.light-mode .cl-popoverBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *) {
+    body.light-mode .cl-rootBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *):not(.cl-watermark):not(.cl-watermark *):not([class*="development"]):not([class*="Development"]):not(.cl-internal-1k8r2n5):not(.cl-securedByText),
+    body.light-mode #clerk-components *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *):not(.cl-watermark):not(.cl-watermark *):not([class*="development"]):not([class*="Development"]):not(.cl-internal-1k8r2n5):not(.cl-securedByText),
+    body.light-mode .cl-userButtonPopoverCard *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *):not(.cl-watermark):not(.cl-watermark *):not([class*="development"]):not([class*="Development"]):not(.cl-internal-1k8r2n5):not(.cl-securedByText),
+    body.light-mode .cl-popoverBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *):not(.cl-watermark):not(.cl-watermark *):not([class*="development"]):not([class*="Development"]):not(.cl-internal-1k8r2n5):not(.cl-securedByText) {
         color: #000000 !important;
     }
     
