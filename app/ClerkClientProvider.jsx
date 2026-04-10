@@ -29,8 +29,8 @@ export function ClerkClientProvider({ children }) {
         variables: {
           colorPrimary: isDarkMode ? '#ffffff' : '#000000',
           colorTextOnPrimaryBackground: isDarkMode ? '#000000' : '#ffffff',
-          colorBackground: isDarkMode ? '#111111' : '#ffffff',
-          colorInputBackground: isDarkMode ? '#1a1a1a' : '#f0f0f0',
+          colorBackground: isDarkMode ? '#1a1a1a' : '#ffffff',
+          colorInputBackground: isDarkMode ? '#222222' : '#f0f0f0',
           colorInputText: isDarkMode ? '#ffffff' : '#000000',
           colorText: isDarkMode ? '#ffffff' : '#000000',
           colorTextSecondary: isDarkMode ? '#ffffff' : '#000000',
