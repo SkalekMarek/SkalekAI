@@ -33,7 +33,8 @@ export function ClerkClientProvider({ children }) {
           colorInputBackground: isDarkMode ? '#1a1a1a' : '#f0f0f0',
           colorInputText: isDarkMode ? '#ffffff' : '#000000',
           colorText: isDarkMode ? '#ffffff' : '#000000',
-          colorDanger: '#c8f902',
+          colorTextSecondary: isDarkMode ? '#cccccc' : '#555555',
+          colorDanger: '#ff3333',
           colorWarning: '#c8f902',
           colorSuccess: '#c8f902'
         }
