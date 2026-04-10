@@ -103,14 +103,18 @@ export default function ChatApp() {
         body: JSON.stringify({ systemPrompt })
       });
       
-      if (!res.ok) throw new Error('Network error');
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Network error');
+      }
       
       setSaveStatus('Saved ✓');
       setTimeout(() => setSaveStatus('Save Prompt'), 2000);
     } catch (e) {
       console.error('Save failed:', e);
-      setSaveStatus('Error — try again');
-      setTimeout(() => setSaveStatus('Save Prompt'), 2500);
+      setSaveStatus(`Error: ${e.message}`);
+      setTimeout(() => setSaveStatus('Save Prompt'), 4000);
     } finally {
       setIsSaving(false);
     }

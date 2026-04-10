@@ -16,7 +16,8 @@ export async function POST(req) {
     const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-      return NextResponse.json({ error: 'Database environment variables missing' }, { status: 500 });
+      console.error('Save Prompt Error: Environment variables are missing or undefined');
+      return NextResponse.json({ error: 'Database configuration missing' }, { status: 500 });
     }
 
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
@@ -27,13 +28,13 @@ export async function POST(req) {
     );
 
     if (error) {
-      console.error('Supabase upsert error:', error);
-      throw error;
+      console.error('Supabase upsert error details:', error);
+      return NextResponse.json({ error: error.message || 'Database rejection' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('Error saving prompt:', err);
-    return NextResponse.json({ error: 'Failed to save prompt' }, { status: 500 });
+    console.error('Fatal error in save-prompt route:', err);
+    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
   }
 }
