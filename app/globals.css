@@ -777,113 +777,81 @@
     body.light-mode #settings-drawer { background: #f0f0f0; }
     body.light-mode .drawer-textarea { background: #fff; }
 
-    /* ====== CLERK FORCE TYPOGRAPHY ====== */
-    /* Dark Mode (Default) */
-    body:not(.light-mode) .cl-rootBox,
-    body:not(.light-mode) .cl-card,
-    body:not(.light-mode) .cl-card h1,
-    body:not(.light-mode) .cl-card h2,
-    body:not(.light-mode) .cl-card h3,
-    body:not(.light-mode) .cl-card h4,
-    body:not(.light-mode) .cl-card p,
-    body:not(.light-mode) .cl-pageHeaderTitle,
-    body:not(.light-mode) .cl-pageHeaderSubtitle,
-    body:not(.light-mode) .cl-headerTitle,
-    body:not(.light-mode) .cl-headerSubtitle,
-    body:not(.light-mode) .cl-profileSectionTitle,
-    body:not(.light-mode) .cl-profileSectionTitleText,
-    body:not(.light-mode) .cl-navbarButton,
-    body:not(.light-mode) .cl-userPreviewMainIdentifier,
-    body:not(.light-mode) .cl-userPreviewSecondaryIdentifier,
-    body:not(.light-mode) .cl-userButtonPopoverActionButtonText,
-    body:not(.light-mode) .cl-userButtonPopoverActionButtonIcon,
-    body:not(.light-mode) .cl-userButtonPopoverActionButton,
-    body:not(.light-mode) .cl-userButtonPopoverActionButton svg,
-    body:not(.light-mode) .cl-formFieldLabel,
-    body:not(.light-mode) .cl-dividerText,
-    body:not(.light-mode) .cl-footerActionText,
-    body:not(.light-mode) .cl-breadcrumbsItem,
-    body:not(.light-mode) .cl-accordionTriggerButton,
-    body:not(.light-mode) .cl-actionCardTitle,
-    body:not(.light-mode) .cl-actionCardDesc,
-    body:not(.light-mode) .cl-popoverBox,
-    body:not(.light-mode) .cl-userButtonPopoverCard,
-    body:not(.light-mode) .cl-profileSectionContent p,
-    body:not(.light-mode) .cl-profileSectionContent span {
+    /* ====== CLERK FORCE TYPOGRAPHY (v7 Deep Dive) ====== */
+    /* Dark Mode Absolute Wildcard */
+    body:not(.light-mode) .cl-rootBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
+    body:not(.light-mode) #clerk-components *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *) {
         color: #ffffff !important;
-    }
-    
-    /* Device Badge specific fix */
-    body:not(.light-mode) .cl-badge:not(:empty) {
-        color: #ffffff !important;
-    }
-    
-    /* Modal Close Button Override (Dark Mode) */
-    body:not(.light-mode) .cl-modalCloseButton {
-        color: #ffffff !important;
-        transition: color 0.15s ease !important;
-    }
-    body:not(.light-mode) .cl-modalCloseButton:hover,
-    body:not(.light-mode) .cl-modalCloseButton:hover svg {
-        color: #ff3333 !important;
     }
 
-    /* Light Mode */
-    body.light-mode .cl-rootBox,
-    body.light-mode .cl-card,
-    body.light-mode .cl-card h1,
-    body.light-mode .cl-card h2,
-    body.light-mode .cl-card h3,
-    body.light-mode .cl-card h4,
-    body.light-mode .cl-card p,
-    body.light-mode .cl-pageHeaderTitle,
-    body.light-mode .cl-pageHeaderSubtitle,
-    body.light-mode .cl-headerTitle,
-    body.light-mode .cl-headerSubtitle,
-    body.light-mode .cl-profileSectionTitle,
-    body.light-mode .cl-profileSectionTitleText,
-    body.light-mode .cl-navbarButton,
-    body.light-mode .cl-userPreviewMainIdentifier,
-    body.light-mode .cl-userPreviewSecondaryIdentifier,
-    body.light-mode .cl-userButtonPopoverActionButtonText,
-    body.light-mode .cl-userButtonPopoverActionButtonIcon,
-    body.light-mode .cl-userButtonPopoverActionButton,
-    body.light-mode .cl-userButtonPopoverActionButton svg,
-    body.light-mode .cl-formFieldLabel,
-    body.light-mode .cl-dividerText,
-    body.light-mode .cl-footerActionText,
-    body.light-mode .cl-breadcrumbsItem,
-    body.light-mode .cl-accordionTriggerButton,
-    body.light-mode .cl-actionCardTitle,
-    body.light-mode .cl-actionCardDesc,
-    body.light-mode .cl-popoverBox,
-    body.light-mode .cl-userButtonPopoverCard,
-    body.light-mode .cl-profileSectionContent p,
-    body.light-mode .cl-profileSectionContent span {
+    /* Light Mode Absolute Wildcard */
+    body.light-mode .cl-rootBox *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *),
+    body.light-mode #clerk-components *:not(button.cl-formButtonPrimary):not(button.cl-formButtonPrimary *):not(button.cl-primaryButton):not(button.cl-primaryButton *):not(button[data-variant="danger"]):not(button[data-variant="danger"] *) {
         color: #000000 !important;
     }
     
-    /* Device Badge specific fix */
-    body.light-mode .cl-badge:not(:empty) {
+    /* INPUT FIXES (Dark mode input was glaring white) */
+    body:not(.light-mode) .cl-rootBox input,
+    body:not(.light-mode) #clerk-components input {
+        background-color: #222222 !important;
+        color: #ffffff !important;
+        border-color: #444444 !important;
+        color-scheme: dark !important; 
+    }
+    
+    body.light-mode .cl-rootBox input,
+    body.light-mode #clerk-components input {
+        background-color: #ffffff !important;
         color: #000000 !important;
+        border-color: #cccccc !important;
+        color-scheme: light !important; 
     }
 
-    /* Modal Close Button Override (Light Mode) */
-    body.light-mode .cl-modalCloseButton {
-        color: #000000 !important;
-        transition: color 0.15s ease !important;
-    }
-    body.light-mode .cl-modalCloseButton:hover,
-    body.light-mode .cl-modalCloseButton:hover svg {
-        color: #ff3333 !important;
-    }
-
-    /* Keep Development Mode & Secured by Clerk explicitly green globally */
-    a[href*="clerk"],
-    [class*="development"],
-    [class*="Development"],
-    .cl-internal-1k8r2n5,
-    .cl-watermark,
-    .cl-securedByText {
+    /* GREEN EXCEPTIONS (Higher specificity using IDs + Tags) */
+    body #clerk-components a[href*="clerk"],
+    body #clerk-components [class*="development"],
+    body #clerk-components [class*="Development"],
+    body #clerk-components .cl-watermark,
+    body #clerk-components .cl-watermark *,
+    body #clerk-components .cl-securedByText,
+    body .cl-rootBox a[href*="clerk"],
+    body .cl-rootBox [class*="development"],
+    body .cl-rootBox [class*="Development"],
+    body .cl-rootBox .cl-watermark,
+    body .cl-rootBox .cl-watermark *,
+    body .cl-rootBox .cl-securedByText {
         color: #c8f902 !important;
+    }
+
+    /* CLOSE MODAL CURSOR FIXES */
+    body:not(.light-mode) #clerk-components .cl-modalCloseButton,
+    body:not(.light-mode) .cl-rootBox .cl-modalCloseButton {
+        color: #ffffff !important;
+        transition: color 0.15s ease !important;
+    }
+    body:not(.light-mode) #clerk-components .cl-modalCloseButton:hover,
+    body:not(.light-mode) #clerk-components .cl-modalCloseButton:hover *,
+    body:not(.light-mode) .cl-rootBox .cl-modalCloseButton:hover,
+    body:not(.light-mode) .cl-rootBox .cl-modalCloseButton:hover * {
+        color: #ff3333 !important;
+    }
+
+    body.light-mode #clerk-components .cl-modalCloseButton,
+    body.light-mode .cl-rootBox .cl-modalCloseButton {
+        color: #000000 !important;
+        transition: color 0.15s ease !important;
+    }
+    body.light-mode #clerk-components .cl-modalCloseButton:hover,
+    body.light-mode #clerk-components .cl-modalCloseButton:hover *,
+    body.light-mode .cl-rootBox .cl-modalCloseButton:hover,
+    body.light-mode .cl-rootBox .cl-modalCloseButton:hover * {
+        color: #ff3333 !important;
+    }
+    
+    /* EXPLICIT RED OVERRIDES FOR DANGER BUTTONS */
+    body:not(.light-mode) #clerk-components button[data-variant="danger"],
+    body:not(.light-mode) #clerk-components button[data-variant="danger"] *,
+    body:not(.light-mode) .cl-rootBox button[data-variant="danger"],
+    body:not(.light-mode) .cl-rootBox button[data-variant="danger"] * {
+        color: #ff3333 !important;
     }
