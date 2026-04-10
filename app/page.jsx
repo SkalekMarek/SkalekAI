@@ -77,19 +77,6 @@ function ChatContent() {
   }, [isLightMode]);
 
   useEffect(() => {
-    // Inject external CDNs that the old UI relied on
-    if (!document.getElementById('hljs-script')) {
-      const script = document.createElement('script');
-      script.id = 'hljs-script';
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js';
-      document.head.appendChild(script);
-      
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
-      document.head.appendChild(link);
-    }
-    
     // Auto-focus on load
     if (centerInputRef.current && !active) {
       centerInputRef.current.focus();
@@ -311,53 +298,17 @@ function ChatContent() {
         elements.push(<span key={`text-${lastIndex}`} style={{ whiteSpace: 'pre-wrap' }}>{text.slice(lastIndex, match.index)}</span>);
       }
       
-      const lang = match[1] || 'code';
+      const lang = (match[1] || 'code').toLowerCase();
       const code = match[2];
       
-      // Attempt HLJS processing if available
-      let highlightedHTML = code;
-      // ONLY apply highlighting if mounted and hljs is available to prevent hydration mismatch
-      if (hasMounted && typeof window !== 'undefined' && window.hljs) {
-        try {
-          const hlLang = window.hljs.getLanguage(lang) ? lang : null;
-          if (hlLang) {
-            highlightedHTML = window.hljs.highlight(code, { language: hlLang, ignoreIllegals: true }).value;
-          } else {
-            const auto = window.hljs.highlightAuto(code);
-            if (auto.relevance > 5) highlightedHTML = auto.value;
-          }
-        } catch (e) {
-          // fallback
-        }
-      }
-
-      const isPreviewable = ['html', 'javascript', 'js', 'svg', 'xml', 'css'].includes(lang.toLowerCase());
-
       elements.push(
-        <div key={`code-${match.index}`} className="code-window">
-          <div className="code-bar">
-            <span className="code-lang">{lang.toUpperCase()}</span>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              {isPreviewable && (
-                <button className="code-preview-btn" onClick={() => handlePreview(text, lang)}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                  Preview
-                </button>
-              )}
-              <button className="code-copy-btn" onClick={(e) => {
-              navigator.clipboard.writeText(code);
-              const btn = e.currentTarget;
-              btn.style.color = 'var(--accent)';
-              setTimeout(() => btn.style.color = '', 1400);
-            }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 16V4C3 2.89543 3.89543 2 5 2H15M9 22H18C19.1046 22 20 21.1046 20 20V8C20 6.89543 19.1046 6 18 6H9C7.89543 6 7 6.89543 7 8V20C7 21.1046 7.89543 22 9 22Z"/></svg>
-            </button>
-            </div>
-          </div>
-          <pre>
-            <code className="hljs" dangerouslySetInnerHTML={{ __html: highlightedHTML }} />
-          </pre>
-        </div>
+        <SafeCodeBlock 
+          key={`code-${match.index}`} 
+          lang={lang} 
+          code={code} 
+          rawText={text} 
+          handlePreview={handlePreview} 
+        />
       );
       
       lastIndex = codeBlockRe.lastIndex;
@@ -559,11 +510,70 @@ function ChatContent() {
       <Script 
         src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" 
         strategy="afterInteractive"
-        onLoad={() => {
-          // Force a small rerender to apply highlighting
-          setMessages(prev => [...prev]);
-        }}
       />
+    </div>
+  );
+}
+
+// SAFE CODE COMPONENT: Isolates highlighting to prevent main page crashes
+function SafeCodeBlock({ lang, code, rawText, handlePreview }) {
+  const [highlighted, setHighlighted] = useState('');
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.hljs) {
+      try {
+        const hlLang = window.hljs.getLanguage(lang) ? lang : null;
+        if (hlLang) {
+          const result = window.hljs.highlight(code, { language: hlLang, ignoreIllegals: true });
+          setHighlighted(result.value);
+        } else {
+          // If language is unknown, don't use highlightAuto (it's slow). 
+          // Just manually escape if necessary or use plain code.
+          setHighlighted(escapeHtml(code));
+        }
+      } catch (e) {
+        setHighlighted(escapeHtml(code));
+      }
+    } else {
+      setHighlighted(escapeHtml(code));
+    }
+  }, [lang, code]);
+
+  function escapeHtml(unsafe) {
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  const isPreviewable = ['html', 'javascript', 'js', 'svg', 'xml', 'css'].includes(lang.toLowerCase());
+
+  return (
+    <div className="code-window">
+      <div className="code-bar">
+        <span className="code-lang">{lang.toUpperCase()}</span>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {isPreviewable && (
+            <button className="code-preview-btn" onClick={() => handlePreview(rawText, lang)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Preview
+            </button>
+          )}
+          <button className="code-copy-btn" onClick={(e) => {
+            navigator.clipboard.writeText(code);
+            const btn = e.currentTarget;
+            btn.style.color = 'var(--accent)';
+            setTimeout(() => btn.style.color = '', 1400);
+          }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 16V4C3 2.89543 3.89543 2 5 2H15M9 22H18C19.1046 22 20 21.1046 20 20V8C20 6.89543 19.1046 6 18 6H9C7.89543 6 7 6.89543 7 8V20C7 21.1046 7.89543 22 9 22Z"/></svg>
+          </button>
+        </div>
+      </div>
+      <pre>
+        <code className="hljs" dangerouslySetInnerHTML={{ __html: highlighted || escapeHtml(code) }} />
+      </pre>
     </div>
   );
 }

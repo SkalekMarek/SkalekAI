@@ -25,14 +25,17 @@ export default function ArtifactPreview({ artifact, onClose }) {
     if (view === 'code') {
       if (typeof window !== 'undefined' && window.hljs) {
         try {
-          const lang = window.hljs.getLanguage(language) ? language : 'javascript';
-          const highlighted = window.hljs.highlight(code, { language: lang, ignoreIllegals: true }).value;
-          setHighlightedCode(highlighted);
+          const hlLang = window.hljs.getLanguage(language) ? language : null;
+          if (hlLang) {
+            const result = window.hljs.highlight(code, { language: hlLang, ignoreIllegals: true });
+            setHighlightedCode(result.value);
+          } else {
+            setHighlightedCode(escapeHtml(code));
+          }
         } catch (e) {
           setHighlightedCode(escapeHtml(code));
         }
       } else {
-        // Fallback to manual escaping if highlight.js is not loaded yet
         setHighlightedCode(escapeHtml(code));
       }
     }
